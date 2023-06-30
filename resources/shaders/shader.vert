@@ -63,17 +63,11 @@ void main() {
   p.xyz = (1.0 / p.w) * p.xyz;
   
   vec3 aligned_pos = (rotation * p.xyz) + obj_pos + (sin(time) * vec3(0.0, 2.0, 0.0));
-
-  float lambda = 1 / (2 * aligned_pos.z + 1);
-  gl_Position.x = aligned_pos.x * lambda;
-  gl_Position.y = (16.0 / 9.0) * aligned_pos.y * lambda;
-  gl_Position.z = 0.125 * aligned_pos.z - 1;
-  gl_Position.w = 1.0;
-
+  
   gl_Position = projection_matrix() * vec4(aligned_pos, 1.0);
   
   //vec4 new_pos = projection_matrix() * vec4(position, 1.0);
   out_position = gl_Position.xyz;
-  out_normal = rotation * normal;
+  out_normal = rotation * (trans_mat * vec4(normal, 1.0)).xyz;
   //gl_Position = new_pos;
 }
