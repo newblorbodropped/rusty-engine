@@ -1,4 +1,4 @@
-use glium::{VertexBuffer, IndexBuffer, implement_vertex};
+use glium::{VertexBuffer, implement_vertex};
 use crate::model_loading::collada_parsing::{Collada, collada_p, Parser, TagParameter};
 
 mod collada_parsing;
@@ -137,11 +137,31 @@ fn group_to_tex_coords(mut floats: Vec<f32>) -> Vec<TextureCoordinates> {
 
 fn to_indices(floats: Vec<f32>) -> Vec<u16> {
     let mut res : Vec<u16> = Vec::new();
-    let mut i : usize = 0;
     for x in floats.iter() {
         res.push(*x as u16);
     }
     res
+}
+
+fn to_matrix(floats: Vec<f32>) -> Option<[[f32; 4]; 4]> {
+    unsafe {
+        if floats.len() != 16 {
+            None 
+        } else {
+            Some(
+                [
+                    [*floats.get_unchecked(0), *floats.get_unchecked(4),
+                     *floats.get_unchecked(8), *floats.get_unchecked(12)],
+                    [*floats.get_unchecked(1), *floats.get_unchecked(5),
+                     *floats.get_unchecked(9), *floats.get_unchecked(13)],
+                    [*floats.get_unchecked(2), *floats.get_unchecked(6),
+                     *floats.get_unchecked(10), *floats.get_unchecked(14)],
+                    [*floats.get_unchecked(3), *floats.get_unchecked(7),
+                     *floats.get_unchecked(11), *floats.get_unchecked(15)]
+                ]
+            )
+    }
+    }
 }
 
 fn extract_positions<'a>(source: &'a Collada<'a>) -> Option<Vec<Position>> {
@@ -357,6 +377,40 @@ fn extract_indices<'a>(source: &'a Collada<'a>) -> Option<Vec<u16>> {
     }
 }
 
+fn extract_transform_mat<'a>(source: &'a Collada<'a>) -> Option<[[f32; 4]; 4]> {
+    match source {
+        Collada::ColladaHeader(b) => {
+            match find_tag_name(b, "library_visual_scenes") {
+                Some(x1) => {
+                    match find_tag_name(x1, "visual_scene") {
+                        Some(x2) => {
+                            match find_tag_name(x2, "node") {
+                                Some(x3) => {
+                                    match find_tag_name(x3, "matrix") {
+                                        Some(mat) => {
+                                            match find_floats(mat){
+                                                Some(vec) => {
+                                                    to_matrix(vec)
+                                                },
+                                                None => None
+                                            }
+                                        },
+                                        None => None
+                                    }
+                                },
+                                None => None
+                            }
+                        },
+                        None => None
+                    }
+                },
+                None => None
+            }
+        },
+        _ => None
+    }
+}
+
 fn pack_verts<'a>(pos: Vec<Position>,
                   norm: Vec<Normal>,
                   tex_coords: Vec<TextureCoordinates>,
@@ -389,21 +443,7 @@ fn pack_verts<'a>(pos: Vec<Position>,
     Some(res)
 }
 
-pub fn pack_indexed_verts(pos: Vec<Position>,
-                          norm: Vec<Normal>,
-                          tex_coords: Vec<TextureCoordinates>,
-                          mut indices: Vec<u16>)
-                          -> Option<(Vec<Position>, Vec<Normal>, Vec<TextureCoordinates>, Vec<u16>)> {
-    let mut pack_pos : Vec<Position> = Vec::new();
-    let mut pack_norm : Vec<Normal> = Vec::new();
-    let mut pack_tex : Vec<TextureCoordinates> = Vec::new();
-    let mut pack_indx : Vec<u16> = Vec::new();
-    let mut used_indices : Vec<(u16, u16, u16)> = Vec::new();
-    
-    None
-}
-
-pub fn load_model(path: &str, display: &glium::Display) -> glium::VertexBuffer<Vertex> {
+pub fn load_model(path: &str, display: &glium::Display) -> (glium::VertexBuffer<Vertex>, [[f32; 4]; 4]){
     let source : String = std::fs::read_to_string(path).unwrap();
     let (_, model): (&str, Collada) = collada_p().parse(&source[..]).unwrap();
 
@@ -413,28 +453,7 @@ pub fn load_model(path: &str, display: &glium::Display) -> glium::VertexBuffer<V
     let binding_indx = extract_indices(&model).unwrap();
 
     let vertex_array = pack_verts(binding_pos, binding_norm, binding_tex, binding_indx).unwrap();
-    VertexBuffer::new(display, vertex_array.as_slice()).unwrap()
-}
-
-pub fn load_indexed_model(path: &str, display: &glium::Display) ->
-    (glium::VertexBuffer<Position>, glium::VertexBuffer<Normal>, glium::IndexBuffer<u16>) {
-        let source : String = std::fs::read_to_string(path).unwrap();
-        let (_, model): (&str, Collada) = collada_p().parse(&source[..]).unwrap();
-
-        let binding_pos = extract_positions(&model).unwrap();
-        let binding_norm = extract_normals(&model).unwrap();
-        let binding_indx = extract_indices(&model).unwrap();     
-        let pos_array = binding_pos.as_slice();
-        let norm_array = binding_norm.as_slice();
-        let indx_array = binding_indx.as_slice();
-        
-        let pos_buffer = VertexBuffer::new(display, pos_array).unwrap();
-        let norm_buffer = VertexBuffer::new(display, norm_array).unwrap();
-        let indx_buffer = IndexBuffer::new(display,
-                                           glium::index::PrimitiveType::TrianglesList,
-                                           indx_array).unwrap();
-        
-        (pos_buffer, norm_buffer, indx_buffer)
+    (VertexBuffer::new(display, vertex_array.as_slice()).unwrap(), extract_transform_mat(&model).unwrap())
 }
 
 #[test]

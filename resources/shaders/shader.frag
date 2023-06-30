@@ -7,6 +7,6 @@ out vec4 color;
 const vec3 light = vec3(2.0, 2.0, -1.0);
 
 void main() {
-  float brightness = dot(normalize(out_normal), normalize(light - out_position));
+  float brightness = max(0.05, dot(normalize(out_normal), normalize(light - out_position)));
   color = vec4(brightness , brightness , brightness , 1.0);
 }

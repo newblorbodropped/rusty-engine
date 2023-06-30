@@ -8,10 +8,12 @@ uniform vec3 camera_up;
 uniform vec3 camera_front;
 uniform float camera_fov;
 uniform float aspect_ratio;
+uniform mat4 trans_mat;
 uniform float time;
 
-const float zrange = 12.0;
-const vec3 obj_pos = vec3(0.0, 0.0, 3.0);
+const float z_near = 0.5;
+
+const vec3 obj_pos = vec3(0.0, 0.0, 10.0);
 
 out vec3 out_normal;
 out vec3 out_position;
@@ -25,23 +27,15 @@ mat3 align_matrix() {
 }
 
 mat4 projection_matrix() {
+  float t = tan(0.5 * camera_fov);
+  float n = z_near;
+  float a = aspect_ratio;
+  
   return mat4(
-              camera_pos.z,
-              0.0,
-              0.0,
-              0.0,
-              0.0,
-              aspect_ratio * camera_pos.z,
-              0.0,
-              0.0,
-              (-1.0) * camera_pos.x,
-              (-1.0) * aspect_ratio * camera_pos.y,
-              1.0 / zrange,
-              1.0,
-              0.0,
-              0.0,
-              (2.0 * tan(1.0 / 2.0 * aspect_ratio)) / zrange,
-              (-1.0) * camera_pos.z
+              1.0 / (t * a) , 0.0 , 0.0 , 0.0 ,
+              0.0 , 1.0 / t , 0.0 , 0.0 ,
+              0.0 , 0.0 , 1.0 , 1.0,
+              0.0 , 0.0 , (-1.0) * n , 0.0
               );
 }
 
@@ -65,15 +59,19 @@ mat3 rot_mat(vec3 v, float t) {
 
 void main() {
   mat3 rotation = rot_mat(vec3(0, 1, 0), time);
+  vec4 p = trans_mat * vec4(position, 1.0);
+  p.xyz = (1.0 / p.w) * p.xyz;
   
-  vec3 aligned_pos = (rotation * position) + obj_pos + (sin(time) * vec3(0.0, 2.0, 0.0));
+  vec3 aligned_pos = (rotation * p.xyz) + obj_pos + (sin(time) * vec3(0.0, 2.0, 0.0));
 
   float lambda = 1 / (2 * aligned_pos.z + 1);
   gl_Position.x = aligned_pos.x * lambda;
   gl_Position.y = (16.0 / 9.0) * aligned_pos.y * lambda;
   gl_Position.z = 0.125 * aligned_pos.z - 1;
   gl_Position.w = 1.0;
-    
+
+  gl_Position = projection_matrix() * vec4(aligned_pos, 1.0);
+  
   //vec4 new_pos = projection_matrix() * vec4(position, 1.0);
   out_position = gl_Position.xyz;
   out_normal = rotation * normal;

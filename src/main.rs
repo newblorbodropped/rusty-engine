@@ -30,7 +30,7 @@ fn parse_params(params: Vec<String>) -> Params {
 
 fn event_handler_gen<T>(display: glium::Display) ->
 impl FnMut(ev::Event<'_, T>, &evl::EventLoopWindowTarget<T>, &mut evl::ControlFlow){
-    let vertex_buf = model_loading::load_model("resources/collada/cube.dae", &display);
+    let (vertex_buf, trans_mat) = model_loading::load_model("resources/collada/first_spaceship.dae", &display);
     
     let program = shader_compilation::create_shader_prog(&display);
     let camera = camera_transformations::Camera::default();
@@ -59,6 +59,7 @@ impl FnMut(ev::Event<'_, T>, &evl::EventLoopWindowTarget<T>, &mut evl::ControlFl
                         camera_front: [camera.front.0, camera.front.1, camera.front.2],
                         camera_fov: camera.fov,
                         aspect_ratio: camera.view_aspect_ratio,
+                        trans_mat: trans_mat,
                         time: time_passed,
                     },
                     &params).unwrap();
