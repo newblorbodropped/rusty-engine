@@ -1,6 +1,7 @@
 #version 140
 in vec3 position;
 in vec3 normal;
+in vec2 tex_coords;
 
 uniform vec3 camera_pos;
 uniform vec3 camera_right;
@@ -11,12 +12,14 @@ uniform float aspect_ratio;
 uniform mat4 trans_mat;
 uniform float time;
 
+
 const float z_near = 0.5;
 
 const vec3 obj_pos = vec3(0.0, 0.0, 10.0);
 
 out vec3 out_normal;
 out vec3 out_position;
+out vec2 out_tex_coords;
 
 vec3 centering_vec() {
   return (camera_pos + ((tan(camera_fov * 0.5) * (1 / aspect_ratio) * 0.5) * camera_front));
@@ -69,5 +72,6 @@ void main() {
   //vec4 new_pos = projection_matrix() * vec4(position, 1.0);
   out_position = gl_Position.xyz;
   out_normal = rotation * (trans_mat * vec4(normal, 1.0)).xyz;
+  out_tex_coords = tex_coords;
   //gl_Position = new_pos;
 }
