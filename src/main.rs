@@ -1,7 +1,9 @@
 extern crate glium;
+extern crate image;
 
 use std::env;
 use std::time;
+use std::io::Cursor;
 
 use glium::{glutin, Surface, uniform, index};
 use glium::glutin::event as ev;
@@ -30,11 +32,18 @@ fn parse_params(params: Vec<String>) -> Params {
 
 fn event_handler_gen<T>(display: glium::Display) ->
 impl FnMut(ev::Event<'_, T>, &evl::EventLoopWindowTarget<T>, &mut evl::ControlFlow){
-    let (vertex_buf, trans_mat) = model_loading::load_model("resources/collada/first_spaceship.dae", &display);
+    let (vertex_buf, trans_mat) = model_loading::load_model("resources/collada/companion_cube.dae", &display);
     
     let program = shader_compilation::create_shader_prog(&display);
     let camera = camera_transformations::Camera::default();
-    let start_instant = time::Instant::now(); 
+    let start_instant = time::Instant::now();
+
+    let image = image::load(Cursor::new(&include_bytes!("../resources/textures/companion_cube.png")),
+                            image::ImageFormat::Png).unwrap().to_rgba8();
+    let image_dimensions = image.dimensions();
+    let image = glium::texture::RawImage2d::from_raw_rgba_reversed(&image.into_raw(), image_dimensions);
+
+    let texture = glium::texture::SrgbTexture2d::new(&display, image).unwrap();
     
     move |ev, _, control_flow| {       
         let mut target = display.draw();
@@ -62,6 +71,7 @@ impl FnMut(ev::Event<'_, T>, &evl::EventLoopWindowTarget<T>, &mut evl::ControlFl
                         aspect_ratio: camera.view_aspect_ratio,
                         trans_mat: trans_mat,
                         time: time_passed,
+                        tex: &texture,
                     },
                     &params).unwrap();
         
