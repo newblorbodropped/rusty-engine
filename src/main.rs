@@ -11,7 +11,7 @@ use glium::glutin::event_loop as evl;
 
 mod model_loading;
 mod shader_compilation;
-mod camera_transformations;
+mod event_handling;
 
 struct Params {
     full_screen: bool
@@ -35,7 +35,11 @@ impl FnMut(ev::Event<'_, T>, &evl::EventLoopWindowTarget<T>, &mut evl::ControlFl
     let (vertex_buf, trans_mat) = model_loading::load_model("resources/collada/companion_cube.dae", &display);
     
     let program = shader_compilation::create_shader_prog(&display);
-    let camera = camera_transformations::Camera::default();
+    let camera = event_handling::camera_transformations::Camera::default();
+    let mut ev_handler = event_handling::EventHandler::new();
+    let cam_binding = event_handling::ModelType::Camera(camera);
+    ev_handler.add_model(cam_binding);
+    
     let start_instant = time::Instant::now();
 
     let image = image::load(Cursor::new(&include_bytes!("../resources/textures/companion_cube.png")),
@@ -58,15 +62,17 @@ impl FnMut(ev::Event<'_, T>, &evl::EventLoopWindowTarget<T>, &mut evl::ControlFl
             backface_culling: glium::draw_parameters::BackfaceCullingMode::CullCounterClockwise,
             .. Default::default()
         };
+
+        let camera = ev_handler.get_camera().unwrap();
         
         target.draw(&vertex_buf,
                     index::NoIndices(index::PrimitiveType::TrianglesList),
                     &program,
                     &uniform! {
-                        camera_pos: [camera.position.0, camera.position.1, camera.position.2],
-                        camera_right: [camera.right.0, camera.right.1, camera.right.2],
-                        camera_up: [camera.up.0, camera.up.1, camera.up.2],
-                        camera_front: [camera.front.0, camera.front.1, camera.front.2],
+                        camera_pos: camera.position,
+                        camera_right: camera.right,
+                        camera_up: camera.up,
+                        camera_front: camera.front,
                         camera_fov: camera.fov,
                         aspect_ratio: camera.view_aspect_ratio,
                         trans_mat: trans_mat,
@@ -80,26 +86,12 @@ impl FnMut(ev::Event<'_, T>, &evl::EventLoopWindowTarget<T>, &mut evl::ControlFl
         let next_frame_time = std::time::Instant::now() +
             std::time::Duration::from_nanos(16_666_667);
 
+        ev_handler.register_event(ev);
+        ev_handler.modify_models();
         *control_flow = glutin::event_loop::ControlFlow::WaitUntil(next_frame_time);
-        match ev {
-            glutin::event::Event::WindowEvent { event, .. } => match event {
-                glutin::event::WindowEvent::CloseRequested => {
-                    *control_flow = glutin::event_loop::ControlFlow::Exit;
-                    return;
-                },
-                _ => return,
-            },
-	    glutin::event::Event::DeviceEvent{
-		device_id: _,
-		event: glutin::event::DeviceEvent::Key(glutin::event::KeyboardInput{
-		    virtual_keycode: Some(glutin::event::VirtualKeyCode::Q),
-                    ..
-		})
-	    } => {
-		*control_flow = glutin::event_loop::ControlFlow::Exit;
-                return;
-	    }
-            _ => (),
+        if ev_handler.params.quit {
+            *control_flow = glutin::event_loop::ControlFlow::Exit;
+            return;
         }
     }
 }
