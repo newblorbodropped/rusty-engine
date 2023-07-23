@@ -1,15 +1,15 @@
 use glium::{VertexBuffer, implement_vertex};
-use crate::model_loading::collada_parsing::{Collada, collada_p, Parser, TagParameter};
+use crate::drawing::mesh::model_loading::collada_parsing::{Collada, collada_p, Parser, TagParameter};
 
-mod collada_parsing;
+pub mod collada_parsing;
 
 #[derive(Clone)]
 #[derive(Copy)]
 #[derive(Debug)]
 pub struct Vertex {
-    position: (f32, f32, f32),
-    normal: (f32, f32, f32),
-    tex_coords: (f32, f32)
+    pub position: (f32, f32, f32),
+    pub normal: (f32, f32, f32),
+    pub tex_coords: (f32, f32)
 }
 
 impl Default for Vertex {
@@ -26,7 +26,7 @@ impl Default for Vertex {
 #[derive(Copy)]
 #[derive(Debug)]
 pub struct Position {
-    position: (f32, f32, f32)
+    pub position: (f32, f32, f32)
 }
 
 impl Default for Position {
@@ -41,7 +41,7 @@ impl Default for Position {
 #[derive(Copy)]
 #[derive(Debug)]
 pub struct Normal {
-    normal: (f32, f32, f32)
+    pub normal: (f32, f32, f32)
 }
 
 impl Default for Normal {
@@ -56,7 +56,7 @@ impl Default for Normal {
 #[derive(Copy)]
 #[derive(Debug)]
 pub struct TextureCoordinates {
-    coordinates: (f32, f32)
+    pub coordinates: (f32, f32)
 }
 
 impl Default for TextureCoordinates {
@@ -105,7 +105,7 @@ fn find_floats<'a>(source: &'a Collada<'a>) -> Option<Vec<f32>> {
     }    
 }
 
-fn group_to_positions(mut floats: Vec<f32>) -> Vec<Position> {
+pub fn group_to_positions(mut floats: Vec<f32>) -> Vec<Position> {
     let mut res: Vec<Position> = Vec::new();
     while floats.len() >= 3 {
         let (coords, rest) = floats.split_at(3);
@@ -115,7 +115,7 @@ fn group_to_positions(mut floats: Vec<f32>) -> Vec<Position> {
     res
 }
 
-fn group_to_normals(mut floats: Vec<f32>) -> Vec<Normal> {
+pub fn group_to_normals(mut floats: Vec<f32>) -> Vec<Normal> {
     let mut res: Vec<Normal> = Vec::new();
     while floats.len() >= 3 {
         let (coords, rest) = floats.split_at(3);
@@ -125,7 +125,7 @@ fn group_to_normals(mut floats: Vec<f32>) -> Vec<Normal> {
     res
 }
 
-fn group_to_tex_coords(mut floats: Vec<f32>) -> Vec<TextureCoordinates> {
+pub fn group_to_tex_coords(mut floats: Vec<f32>) -> Vec<TextureCoordinates> {
     let mut res: Vec<TextureCoordinates> = Vec::new();
     while floats.len() >= 2 {
         let (coords, rest) = floats.split_at(2);
@@ -135,7 +135,7 @@ fn group_to_tex_coords(mut floats: Vec<f32>) -> Vec<TextureCoordinates> {
     res
 }
 
-fn to_indices(floats: Vec<f32>) -> Vec<u16> {
+pub fn to_indices(floats: Vec<f32>) -> Vec<u16> {
     let mut res : Vec<u16> = Vec::new();
     for x in floats.iter() {
         res.push(*x as u16);
@@ -143,7 +143,7 @@ fn to_indices(floats: Vec<f32>) -> Vec<u16> {
     res
 }
 
-fn to_matrix(floats: Vec<f32>) -> Option<[[f32; 4]; 4]> {
+pub fn to_matrix(floats: Vec<f32>) -> Option<[[f32; 4]; 4]> {
     unsafe {
         if floats.len() != 16 {
             None 
@@ -164,7 +164,7 @@ fn to_matrix(floats: Vec<f32>) -> Option<[[f32; 4]; 4]> {
     }
 }
 
-fn extract_positions<'a>(source: &'a Collada<'a>) -> Option<Vec<Position>> {
+pub fn extract_positions<'a>(source: &'a Collada<'a>) -> Option<Vec<Position>> {
     match source {
         Collada::ColladaHeader(b) => {
             match find_tag_name(&b,"library_geometries") {
@@ -222,7 +222,7 @@ fn extract_positions<'a>(source: &'a Collada<'a>) -> Option<Vec<Position>> {
     }
 }
 
-fn extract_normals<'a>(source: &'a Collada<'a>) -> Option<Vec<Normal>> {
+pub fn extract_normals<'a>(source: &'a Collada<'a>) -> Option<Vec<Normal>> {
     match source {
         Collada::ColladaHeader(b) => {
             match find_tag_name(&b,"library_geometries") {
@@ -280,7 +280,7 @@ fn extract_normals<'a>(source: &'a Collada<'a>) -> Option<Vec<Normal>> {
     }
 }
 
-fn extract_texture_coordinates<'a>(source: &'a Collada<'a>) -> Option<Vec<TextureCoordinates>> {
+pub fn extract_texture_coordinates<'a>(source: &'a Collada<'a>) -> Option<Vec<TextureCoordinates>> {
     match source {
         Collada::ColladaHeader(b) => {
             match find_tag_name(&b,"library_geometries") {
@@ -338,7 +338,7 @@ fn extract_texture_coordinates<'a>(source: &'a Collada<'a>) -> Option<Vec<Textur
     }
 }
 
-fn extract_indices<'a>(source: &'a Collada<'a>) -> Option<Vec<u16>> {
+pub fn extract_indices<'a>(source: &'a Collada<'a>) -> Option<Vec<u16>> {
     match source {
         Collada::ColladaHeader(b) => {
             match find_tag_name(b, "library_geometries") {
@@ -377,7 +377,7 @@ fn extract_indices<'a>(source: &'a Collada<'a>) -> Option<Vec<u16>> {
     }
 }
 
-fn extract_transform_mat<'a>(source: &'a Collada<'a>) -> Option<[[f32; 4]; 4]> {
+pub fn extract_transform_mat<'a>(source: &'a Collada<'a>) -> Option<[[f32; 4]; 4]> {
     match source {
         Collada::ColladaHeader(b) => {
             match find_tag_name(b, "library_visual_scenes") {
@@ -411,7 +411,7 @@ fn extract_transform_mat<'a>(source: &'a Collada<'a>) -> Option<[[f32; 4]; 4]> {
     }
 }
 
-fn pack_verts<'a>(pos: Vec<Position>,
+pub fn pack_verts<'a>(pos: Vec<Position>,
                   norm: Vec<Normal>,
                   tex_coords: Vec<TextureCoordinates>,
                   mut indices: Vec<u16>) -> Option<Vec<Vertex>> {

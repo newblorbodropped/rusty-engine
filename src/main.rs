@@ -9,8 +9,11 @@ use glium::{glutin, Surface, uniform, index};
 use glium::glutin::event as ev;
 use glium::glutin::event_loop as evl;
 
-mod model_loading;
-mod shader_compilation;
+use crate::drawing::mesh::Mesh;
+use crate::drawing::shader_compilation::ShaderProg;
+use crate::drawing::texture::Texture;
+
+mod drawing;
 mod event_handling;
 
 struct Params {
@@ -32,56 +35,38 @@ fn parse_params(params: Vec<String>) -> Params {
 
 fn event_handler_gen<T>(display: glium::Display) ->
 impl FnMut(ev::Event<'_, T>, &evl::EventLoopWindowTarget<T>, &mut evl::ControlFlow){
-    let (vertex_buf, trans_mat) = model_loading::load_model("resources/collada/companion_cube.dae", &display);
-    
-    let program = shader_compilation::create_shader_prog(&display);
+    //load the models
+    let mut mesh = Mesh::new_with_id(1);
+    mesh.load_geometry();
+    mesh.buffer_unindexed(&display);
+
+    //load the shader programs
+    let shader_prog = ShaderProg::load_from_file_pp(1, &display);
+
+    //create a camera
     let camera = event_handling::camera_transformations::Camera::default();
+
+    //create an event handler and regster the camera
     let mut ev_handler = event_handling::EventHandler::new();
     let cam_binding = event_handling::ModelType::Camera(camera);
     ev_handler.add_model(cam_binding);
-    
+
+    //start the clock
     let start_instant = time::Instant::now();
 
-    let image = image::load(Cursor::new(&include_bytes!("../resources/textures/companion_cube.png")),
-                            image::ImageFormat::Png).unwrap().to_rgba8();
-    let image_dimensions = image.dimensions();
-    let image = glium::texture::RawImage2d::from_raw_rgba_reversed(&image.into_raw(), image_dimensions);
-
-    let texture = glium::texture::SrgbTexture2d::new(&display, image).unwrap();
+    //load all the model textures
+    let texture = Texture::from_file(1, &display); 
     
-    move |ev, _, control_flow| {       
-        let mut target = display.draw();
-        target.clear_color_and_depth((0.0, 0.0, 1.0, 1.0), 1.0);
+    move |ev, _, control_flow| {
         let time_passed = time::Instant::now().duration_since(start_instant).as_secs_f32();
-        let params = glium::DrawParameters {
-            depth: glium::Depth {
-                test: glium::draw_parameters::DepthTest::IfLess,
-                write: true,
-                .. Default::default()
-            },
-            backface_culling: glium::draw_parameters::BackfaceCullingMode::CullCounterClockwise,
-            .. Default::default()
-        };
-
         let camera = ev_handler.get_camera().unwrap();
-        
-        target.draw(&vertex_buf,
-                    index::NoIndices(index::PrimitiveType::TrianglesList),
-                    &program,
-                    &uniform! {
-                        camera_pos: camera.position,
-                        camera_right: camera.right,
-                        camera_up: camera.up,
-                        camera_front: camera.front,
-                        camera_fov: camera.fov,
-                        aspect_ratio: camera.view_aspect_ratio,
-                        trans_mat: trans_mat,
-                        time: time_passed,
-                        tex: &texture,
-                    },
-                    &params).unwrap();
-        
-        target.finish().unwrap();
+
+        drawing::render_meshes(vec![&mesh],
+                               &display,
+                               &camera,
+                               vec![&shader_prog],
+                               None,
+                               vec![&texture]);
 
         let next_frame_time = std::time::Instant::now() +
             std::time::Duration::from_nanos(16_666_667);
@@ -103,8 +88,6 @@ fn main() {
     let wb = glutin::window::WindowBuilder::new();
     let cb = glutin::ContextBuilder::new().with_depth_buffer(24);
     let display = glium::Display::new(wb, cb, &event_loop).unwrap();
-    println!("{:#?}", display.get_opengl_version());
-    _ = model_loading::load_model("resources/collada/cube.dae", &display);
 
     if params.full_screen {
         let monitor_handle = display.gl_window().window().available_monitors().next().unwrap();
