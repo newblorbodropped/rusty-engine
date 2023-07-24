@@ -35,9 +35,15 @@ fn parse_params(params: Vec<String>) -> Params {
 fn event_handler_gen<T>(display: glium::Display) ->
 impl FnMut(ev::Event<'_, T>, &evl::EventLoopWindowTarget<T>, &mut evl::ControlFlow){
     //load the models
-    let mut mesh = Mesh::new_with_id_shader_tex(1, 1, 1);
-    mesh.load_geometry();
-    mesh.buffer_unindexed(&display);
+    let mut cube = Mesh::new_with_id_shader_tex(1, 1, 1);
+    let mut floor = Mesh::new_with_id_shader_tex(3, 1, 0);
+    
+    cube.load_geometry();
+    cube.buffer_unindexed(&display);
+
+    floor.set_offset((0.0 as f32, -1.0 as f32, -2.0 as f32));
+    floor.load_geometry();
+    floor.buffer_unindexed(&display);
 
     //load the shader programs
     let shader_prog = ShaderProg::load_from_file(1, &display);
@@ -55,18 +61,19 @@ impl FnMut(ev::Event<'_, T>, &evl::EventLoopWindowTarget<T>, &mut evl::ControlFl
     let start_instant = time::Instant::now();
 
     //load all the model textures
-    let texture = Texture::from_file(1, &display); 
+    let cube_tex = Texture::from_file(1, &display);
+    let default_tex = Texture::from_file(0, &display);
     
     move |ev, _, control_flow| {
         let time_passed = time::Instant::now().duration_since(start_instant).as_secs_f32();
         let camera = ev_handler.get_camera().unwrap();
 
-        drawing::render_meshes(vec![&mesh],
+        drawing::render_meshes(vec![&cube, &floor],
                                &display,
                                &camera,
                                vec![&shader_prog],
                                Some(&shaderpp_prog),
-                               vec![&texture]);
+                               vec![&default_tex, &cube_tex]);
 
         let next_frame_time = std::time::Instant::now() +
             std::time::Duration::from_nanos(16_666_667);

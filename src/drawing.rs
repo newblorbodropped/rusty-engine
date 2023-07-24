@@ -98,6 +98,8 @@ pub fn render_meshes(meshes: Vec<&mesh::Mesh>,
                                                 camera_fov: camera.fov,
                                                 aspect_ratio: camera.view_aspect_ratio,
                                                 trans_mat: mesh.transform_mat,
+                                                offset: mesh.offset,
+                                                scale: mesh.scale,
                                                 tex: current_texture.get_texture(),
                                             },
                                             &params).unwrap();

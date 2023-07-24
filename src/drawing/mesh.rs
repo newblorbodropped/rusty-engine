@@ -15,7 +15,8 @@ pub struct Mesh {
     pub indices: Option<Box<[u16]>>,
     pub vertex_buf: Option<VertexBuffer<Vertex>>,
     pub transform_mat: [[f32; 4]; 4],
-    pub offset: f32,
+    pub offset: (f32, f32, f32),
+    pub scale: f32,
     pub shader_id: u16,
     pub texture_id: u16
 }
@@ -37,7 +38,8 @@ impl Mesh {
             indices: None,
             vertex_buf: None,
             transform_mat: mat,
-            offset: 0.0,
+            offset: (0.0, 0.0, 0.0),
+            scale: 1.0,
             shader_id: 0,
             texture_id: 0
         }
@@ -59,7 +61,8 @@ impl Mesh {
             indices: None,
             vertex_buf: None,
             transform_mat: mat,
-            offset: 0.0,
+            offset: (0.0, 0.0, 0.0),
+            scale: 1.0,
             shader_id: 0,
             texture_id: 0
         }
@@ -81,7 +84,8 @@ impl Mesh {
             indices: None,
             vertex_buf: None,
             transform_mat: mat,
-            offset: 0.0,
+            offset: (0.0, 0.0, 0.0),
+            scale: 1.0,
             shader_id: shader_id,
             texture_id: 0
         }
@@ -103,7 +107,8 @@ impl Mesh {
             indices: None,
             vertex_buf: None,
             transform_mat: mat,
-            offset: 0.0,
+            offset: (0.0, 0.0, 0.0),
+            scale: 1.0,
             shader_id: shader_id,
             texture_id: texture_id
         }
@@ -111,6 +116,14 @@ impl Mesh {
 
     pub fn set_id(&mut self, id: u16) {
         self.id = id;
+    }
+
+    pub fn set_offset(&mut self, offset: (f32, f32, f32)) {
+        self.offset = offset;
+    }
+
+    pub fn set_scale(&mut self, scale: f32) {
+        self.scale = scale;
     }
 
     pub fn load_geometry(&mut self) {

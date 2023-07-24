@@ -10,12 +10,12 @@ uniform vec3 camera_front;
 uniform float camera_fov;
 uniform float aspect_ratio;
 uniform mat4 trans_mat;
+uniform vec3 offset;
+uniform float scale;
 uniform float time;
 
 
 const float z_near = 0.5;
-
-const vec3 obj_pos = vec3(0.0, 0.0, 3.0);
 
 out vec3 out_normal;
 out vec3 out_position;
@@ -58,9 +58,9 @@ mat3 rot_mat(vec3 v, float t) {
 
 void main() {
   vec4 p = trans_mat * vec4(position, 1.0);
-  p.xyz = (1.0 / p.w) * p.xyz;
+  p.xyz = (scale / p.w) * p.xyz;
   
-  vec3 aligned_pos =  (align_matrix() * (p.xyz + obj_pos - camera_pos));
+  vec3 aligned_pos =  (align_matrix() * (p.xyz + offset - camera_pos));
   
   gl_Position = projection_matrix() * vec4(aligned_pos, 1.0);
   
