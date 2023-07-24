@@ -20,6 +20,7 @@ const float z_near = 0.5;
 out vec3 out_normal;
 out vec3 out_position;
 out vec2 out_tex_coords;
+out vec3 light;
 
 mat3 align_matrix() {
   return transpose(mat3(camera_right, camera_up, camera_front));
@@ -57,16 +58,21 @@ mat3 rot_mat(vec3 v, float t) {
 
 
 void main() {
+  vec3 global_light = vec3(10.0, 15.0, -10.0);
+  
   vec4 p = trans_mat * vec4(position, 1.0);
   p.xyz = (scale / p.w) * p.xyz;
+
+  mat3 align_matrix = align_matrix();
   
-  vec3 aligned_pos =  (align_matrix() * (p.xyz + offset - camera_pos));
+  vec3 aligned_pos =  (align_matrix * (p.xyz + offset - camera_pos));
+  light = (align_matrix * (global_light - camera_pos));
   
   gl_Position = projection_matrix() * vec4(aligned_pos, 1.0);
   
   //vec4 new_pos = projection_matrix() * vec4(position, 1.0);
   out_position = gl_Position.xyz;
-  out_normal = (trans_mat * vec4(normal, 1.0)).xyz;
+  out_normal = align_matrix * (trans_mat * vec4(normal, 1.0)).xyz;
   out_tex_coords = tex_coords;
   //gl_Position = new_pos;
 }

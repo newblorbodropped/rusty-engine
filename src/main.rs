@@ -36,12 +36,12 @@ fn event_handler_gen<T>(display: glium::Display) ->
 impl FnMut(ev::Event<'_, T>, &evl::EventLoopWindowTarget<T>, &mut evl::ControlFlow){
     //load the models
     let mut cube = Mesh::new_with_id_shader_tex(1, 1, 1);
-    let mut floor = Mesh::new_with_id_shader_tex(3, 1, 0);
+    let mut floor = Mesh::new_with_id_shader_tex(4, 1, 2);
     
     cube.load_geometry();
     cube.buffer_unindexed(&display);
 
-    floor.set_offset((0.0 as f32, -1.0 as f32, -2.0 as f32));
+    floor.set_offset((0.0 as f32, -1.0 as f32, 0.0 as f32));
     floor.load_geometry();
     floor.buffer_unindexed(&display);
 
@@ -59,13 +59,18 @@ impl FnMut(ev::Event<'_, T>, &evl::EventLoopWindowTarget<T>, &mut evl::ControlFl
 
     //start the clock
     let start_instant = time::Instant::now();
+    let mut last_frame = time::Instant::now();
 
     //load all the model textures
     let cube_tex = Texture::from_file(1, &display);
-    let default_tex = Texture::from_file(0, &display);
+    let floor_tex = Texture::from_file(2, &display);
     
     move |ev, _, control_flow| {
         let time_passed = time::Instant::now().duration_since(start_instant).as_secs_f32();
+        let time_since_last_frame = time::Instant::now().duration_since(last_frame).as_secs_f32();
+        println!("{}", time_since_last_frame);
+        last_frame = time::Instant::now();
+        
         let camera = ev_handler.get_camera().unwrap();
 
         drawing::render_meshes(vec![&cube, &floor],
@@ -73,11 +78,11 @@ impl FnMut(ev::Event<'_, T>, &evl::EventLoopWindowTarget<T>, &mut evl::ControlFl
                                &camera,
                                vec![&shader_prog],
                                Some(&shaderpp_prog),
-                               vec![&default_tex, &cube_tex]);
+                               vec![&cube_tex, &floor_tex]);
 
         let next_frame_time = std::time::Instant::now() +
             std::time::Duration::from_nanos(16_666_667);
-
+        
         ev_handler.register_event(ev);
         ev_handler.modify_models();
         *control_flow = glutin::event_loop::ControlFlow::WaitUntil(next_frame_time);
