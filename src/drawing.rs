@@ -47,6 +47,7 @@ pub fn render_meshes(meshes: Vec<&mesh::Mesh>,
     let mut framebuffer = SimpleFrameBuffer::with_depth_buffer(display,
                                                                &target_color,
                                                                &target_depth).unwrap();
+    framebuffer.clear_color_and_depth((0.0, 0.0, 1.0, 1.0), 1.0);
     
     let params = glium::DrawParameters {
         depth: glium::Depth {
@@ -110,37 +111,24 @@ pub fn render_meshes(meshes: Vec<&mesh::Mesh>,
                                                      SpriteVertex{ position: [-1.0, -1.0] },
                                                      SpriteVertex{ position: [-1.0,  1.0] },
                                                      SpriteVertex{ position: [ 1.0,  1.0] },
-                                                     SpriteVertex{ position: [ 1.0, -1.0] }
+                                                     SpriteVertex{ position: [ 1.0, -1.0] },
+                                                     SpriteVertex{ position: [-1.0, -1.0] },
+                                                     SpriteVertex{ position: [ 1.0,  1.0] }
                                                  ]).unwrap();
-    let postpr_index_buffer = IndexBuffer::new(display,
-                                               PrimitiveType::TriangleStrip,
-                                               &[1 as u16, 2, 0, 3]).unwrap();
-    
+   
     match postpr_shader {
         Some(prog) => {
             let uniforms = uniform! {
-                tex: target_color,
-                resolution: (target_dimensions.0 as f32, target_dimensions.1 as f32) 
+                tex: target_color
             };
             target.draw(&postpr_vertex_buffer,
-                        &postpr_index_buffer,
+                        NoIndices(PrimitiveType::TrianglesList),
                         prog.get_prog(),
                         &uniforms,
                         &Default::default()).unwrap();
         },
-        None => {
-            let default_prog = shader_compilation::ShaderProg::load_from_file_pp(0, &display);
-            let uniforms = uniform! {
-                tex: target_color,
-                resolution: (target_dimensions.0 as f32, target_dimensions.1 as f32) 
-            };
-            target.draw(&postpr_vertex_buffer,
-                        &postpr_index_buffer,
-                        default_prog.get_prog(),
-                        &uniforms,
-                        &Default::default()).unwrap();
-        }
+        None => {}
     }
-
+    
     target.finish().unwrap();
 }

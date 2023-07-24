@@ -32,7 +32,7 @@ impl ShaderProg {
 
     pub fn load_from_file_pp(id: u16, display: &Display) -> ShaderProg {
         let mut pathstr_vert = std::string::String::new();
-        pathstr_vert.push_str("./resources/textures/shaderpp.vert");
+        pathstr_vert.push_str("./resources/shaders/shaderpp.vert");
         let path_vert = std::path::Path::new(&pathstr_vert);
 
         let mut pathstr_frag = std::string::String::new();
@@ -40,7 +40,7 @@ impl ShaderProg {
         pathstr_frag.push_str(id.to_string().as_str());
         pathstr_frag.push_str(".frag");
         let path_frag = std::path::Path::new(&pathstr_frag);
-
+        
         let vert_src : String = std::fs::read_to_string(path_vert).unwrap();
         let frag_src : String = std::fs::read_to_string(path_frag).unwrap();
 

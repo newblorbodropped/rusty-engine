@@ -3,7 +3,6 @@ extern crate image;
 
 use std::env;
 use std::time;
-use std::io::Cursor;
 
 use glium::{glutin, Surface, uniform, index};
 use glium::glutin::event as ev;
@@ -36,17 +35,18 @@ fn parse_params(params: Vec<String>) -> Params {
 fn event_handler_gen<T>(display: glium::Display) ->
 impl FnMut(ev::Event<'_, T>, &evl::EventLoopWindowTarget<T>, &mut evl::ControlFlow){
     //load the models
-    let mut mesh = Mesh::new_with_id(1);
+    let mut mesh = Mesh::new_with_id_shader_tex(1, 1, 1);
     mesh.load_geometry();
     mesh.buffer_unindexed(&display);
 
     //load the shader programs
-    let shader_prog = ShaderProg::load_from_file_pp(1, &display);
+    let shader_prog = ShaderProg::load_from_file(1, &display);
+    let shaderpp_prog = ShaderProg::load_from_file_pp(0, &display);
 
     //create a camera
     let camera = event_handling::camera_transformations::Camera::default();
 
-    //create an event handler and regster the camera
+    //create an event handler and regster the camera<
     let mut ev_handler = event_handling::EventHandler::new();
     let cam_binding = event_handling::ModelType::Camera(camera);
     ev_handler.add_model(cam_binding);
@@ -65,7 +65,7 @@ impl FnMut(ev::Event<'_, T>, &evl::EventLoopWindowTarget<T>, &mut evl::ControlFl
                                &display,
                                &camera,
                                vec![&shader_prog],
-                               None,
+                               Some(&shaderpp_prog),
                                vec![&texture]);
 
         let next_frame_time = std::time::Instant::now() +

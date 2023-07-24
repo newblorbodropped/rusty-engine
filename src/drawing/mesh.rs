@@ -65,6 +65,50 @@ impl Mesh {
         }
     }
 
+    pub fn new_with_id_shader(id: u16, shader_id: u16) -> Mesh{
+        let mat : [[f32; 4]; 4] = [
+            [0.0, 0.0, 0.0, 0.0],
+            [0.0, 0.0, 0.0, 0.0],
+            [0.0, 0.0, 0.0, 0.0],
+            [0.0, 0.0, 0.0, 0.0]
+        ];
+        
+        Mesh {
+            id: id,
+            positions: None,
+            normals: None,
+            tex_coords: None,
+            indices: None,
+            vertex_buf: None,
+            transform_mat: mat,
+            offset: 0.0,
+            shader_id: shader_id,
+            texture_id: 0
+        }
+    }
+
+    pub fn new_with_id_shader_tex(id: u16, shader_id: u16, texture_id: u16) -> Mesh {
+        let mat : [[f32; 4]; 4] = [
+            [0.0, 0.0, 0.0, 0.0],
+            [0.0, 0.0, 0.0, 0.0],
+            [0.0, 0.0, 0.0, 0.0],
+            [0.0, 0.0, 0.0, 0.0]
+        ];
+        
+        Mesh {
+            id: id,
+            positions: None,
+            normals: None,
+            tex_coords: None,
+            indices: None,
+            vertex_buf: None,
+            transform_mat: mat,
+            offset: 0.0,
+            shader_id: shader_id,
+            texture_id: texture_id
+        }
+    }
+
     pub fn set_id(&mut self, id: u16) {
         self.id = id;
     }
@@ -139,12 +183,12 @@ impl Mesh {
             curr_indx += 1;
 
             let norm_index : usize = indices[curr_indx] as usize;
-            vert.normal = normals[pos_index].normal;
+            vert.normal = normals[norm_index].normal;
 
             curr_indx += 1;
 
             let tex_coord_index : usize = indices[curr_indx] as usize;
-            vert.tex_coords = tex_coords[pos_index].coordinates;
+            vert.tex_coords = tex_coords[tex_coord_index].coordinates;
 
             curr_indx += 1;
 
