@@ -68,7 +68,6 @@ impl FnMut(ev::Event<'_, T>, &evl::EventLoopWindowTarget<T>, &mut evl::ControlFl
     move |ev, _, control_flow| {
         let time_passed = time::Instant::now().duration_since(start_instant).as_secs_f32();
         let time_since_last_frame = time::Instant::now().duration_since(last_frame).as_secs_f32();
-        println!("{}", time_since_last_frame);
         last_frame = time::Instant::now();
         
         let camera = ev_handler.get_camera().unwrap();

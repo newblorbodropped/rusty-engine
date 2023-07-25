@@ -8,3 +8,9 @@ edition = "2021"
 [dependencies]
 glium = "*"
 image = "*"
+
+[profile.dev]
+opt-level = 0
+
+[profile.release]
+opt-level = 3
