@@ -1,6 +1,5 @@
 use glium::backend::glutin::Display;
 use glium::vertex::VertexBuffer;
-use glium::index::IndexBuffer;
 
 use model_loading::{ Position, Normal, TextureCoordinates , Vertex };
 use model_loading::collada_parsing::Parser;
@@ -22,6 +21,7 @@ pub struct Mesh {
 }
 
 impl Mesh {
+    #[allow(dead_code)]
     pub fn new() -> Mesh {
         let mat : [[f32; 4]; 4] = [
             [0.0, 0.0, 0.0, 0.0],
@@ -45,6 +45,7 @@ impl Mesh {
         }
     }
 
+    #[allow(dead_code)]
     pub fn new_with_id(id: u16) -> Mesh {
         let mat : [[f32; 4]; 4] = [
             [0.0, 0.0, 0.0, 0.0],
@@ -68,6 +69,7 @@ impl Mesh {
         }
     }
 
+    #[allow(dead_code)]
     pub fn new_with_id_shader(id: u16, shader_id: u16) -> Mesh{
         let mat : [[f32; 4]; 4] = [
             [0.0, 0.0, 0.0, 0.0],
@@ -114,6 +116,7 @@ impl Mesh {
         }
     }
 
+    #[allow(dead_code)]
     pub fn set_id(&mut self, id: u16) {
         self.id = id;
     }
@@ -122,6 +125,7 @@ impl Mesh {
         self.offset = offset;
     }
 
+    #[allow(dead_code)]
     pub fn set_scale(&mut self, scale: f32) {
         self.scale = scale;
     }

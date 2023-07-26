@@ -2,9 +2,8 @@ extern crate glium;
 extern crate image;
 
 use std::env;
-use std::time;
 
-use glium::{glutin, Surface, uniform, index};
+use glium::glutin;
 use glium::glutin::event as ev;
 use glium::glutin::event_loop as evl;
 
@@ -57,24 +56,16 @@ impl FnMut(ev::Event<'_, T>, &evl::EventLoopWindowTarget<T>, &mut evl::ControlFl
     let cam_binding = event_handling::ModelType::Camera(camera);
     ev_handler.add_model(cam_binding);
 
-    //start the clock
-    let start_instant = time::Instant::now();
-    let mut last_frame = time::Instant::now();
-
     //load all the model textures
     let cube_tex = Texture::from_file(1, &display);
     let floor_tex = Texture::from_file(2, &display);
     
     move |ev, _, control_flow| {
-        let time_passed = time::Instant::now().duration_since(start_instant).as_secs_f32();
-        let time_since_last_frame = time::Instant::now().duration_since(last_frame).as_secs_f32();
-        last_frame = time::Instant::now();
-        
         let camera = ev_handler.get_camera().unwrap();
 
         drawing::render_meshes(vec![&cube, &floor],
-                               &display,
                                &camera,
+                               &display,
                                vec![&shader_prog],
                                Some(&shaderpp_prog),
                                vec![&cube_tex, &floor_tex]);

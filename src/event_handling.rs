@@ -1,5 +1,8 @@
 use glium::glutin::event as ev;
 
+use std::collections::HashSet;
+use std::collections::hash_map::RandomState;
+
 pub mod camera_transformations;
 
 pub struct Params {
@@ -11,7 +14,7 @@ pub enum ModelType {
 }
 
 impl ModelType {
-    fn apply_inputs(&mut self, inputs: &Vec<ev::VirtualKeyCode>) {
+    fn apply_inputs(&mut self, inputs: &HashSet<ev::VirtualKeyCode, RandomState>) {
         match self {
             ModelType::Camera(camera) => {
                 let mut  movements : Vec<camera_transformations::CameraMovement> = Vec::new();
@@ -61,7 +64,7 @@ impl ModelType {
 pub struct EventHandler<T> {
     models: Vec<ModelType>,
     pub params: Params,
-    inputs: Vec<ev::VirtualKeyCode>,
+    inputs: HashSet<ev::VirtualKeyCode, RandomState>,
     phantom: std::marker::PhantomData<T>
 }
 
@@ -70,7 +73,7 @@ impl<T> EventHandler<T> {
         EventHandler {
             models: Vec::new(),
             params: Params { quit: false },
-            inputs: Vec::new(),
+            inputs: HashSet::new(),
             phantom: core::marker::PhantomData
         }
     }
@@ -78,7 +81,7 @@ impl<T> EventHandler<T> {
     pub fn add_model(&mut self, model: ModelType) {
         self.models.push(model);
     }
-
+    
     pub fn register_event(&mut self, event: ev::Event<T>) {
         match event {
             ev::Event::WindowEvent { event, .. } => match event {
@@ -95,7 +98,7 @@ impl<T> EventHandler<T> {
                     ..
 		})
 	    } => {
-		self.inputs.push(keycode);
+		self.inputs.insert(keycode);
 	    },
             ev::Event::DeviceEvent{
 		device_id: _,
@@ -105,7 +108,7 @@ impl<T> EventHandler<T> {
                     ..
 		})
 	    } => {
-		self.inputs = self.inputs.iter().filter(|x| **x != keycode).map(|x| *x).collect();
+		self.inputs.remove(&keycode);
 	    },
             _ => {} 
         }

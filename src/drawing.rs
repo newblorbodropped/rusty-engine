@@ -2,15 +2,14 @@ use std::cmp::Ordering;
 
 use glium::framebuffer::{SimpleFrameBuffer, DepthRenderBuffer};
 use glium::VertexBuffer;
-use glium::index::{IndexBuffer, PrimitiveType, NoIndices};
-use glium::texture::{DepthFormat, PixelValue};
+use glium::index::{PrimitiveType, NoIndices};
+use glium::texture::DepthFormat;
 use glium::texture::texture2d::Texture2d;
 use glium::implement_vertex;
 use glium::uniform;
 use glium::Surface;
 
 use crate::event_handling::camera_transformations::Camera;
-use mesh::Mesh;
 use shader_compilation::ShaderProg;
 use texture::Texture;
 
@@ -28,14 +27,12 @@ struct SpriteVertex {
 implement_vertex!(SpriteVertex, position);
 
 pub fn render_meshes(meshes: Vec<&mesh::Mesh>,
-                     display: &glium::Display,
                      camera: &Camera,
+                     display: &glium::Display,
                      shaders: Vec<&ShaderProg>,
                      postpr_shader: Option<&ShaderProg>,
                      textures: Vec<&Texture>) {
     let mut target = display.draw();
-    target.clear_color_and_depth((0.0, 0.0, 1.0, 1.0), 1.0);
-    
     let target_dimensions = target.get_dimensions();
     let target_color = Texture2d::empty(display,
                                         target_dimensions.0,
@@ -47,7 +44,9 @@ pub fn render_meshes(meshes: Vec<&mesh::Mesh>,
     let mut framebuffer = SimpleFrameBuffer::with_depth_buffer(display,
                                                                &target_color,
                                                                &target_depth).unwrap();
-    framebuffer.clear_color_and_depth((0.0, 0.0, 1.0, 1.0), 1.0);
+    
+    target.clear_color_and_depth((0.0, 0.0, 0.0, 1.0), 1.0);
+    framebuffer.clear_color_and_depth((0.0, 0.0, 0.0, 1.0), 1.0);
     
     let params = glium::DrawParameters {
         depth: glium::Depth {

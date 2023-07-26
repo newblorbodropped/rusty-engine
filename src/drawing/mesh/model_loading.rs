@@ -1,5 +1,5 @@
-use glium::{VertexBuffer, implement_vertex};
-use crate::drawing::mesh::model_loading::collada_parsing::{Collada, collada_p, Parser, TagParameter};
+use glium::implement_vertex;
+use crate::drawing::mesh::model_loading::collada_parsing::{Collada, TagParameter};
 
 pub mod collada_parsing;
 
@@ -409,51 +409,6 @@ pub fn extract_transform_mat<'a>(source: &'a Collada<'a>) -> Option<[[f32; 4]; 4
         },
         _ => None
     }
-}
-
-pub fn pack_verts<'a>(pos: Vec<Position>,
-                  norm: Vec<Normal>,
-                  tex_coords: Vec<TextureCoordinates>,
-                  mut indices: Vec<u16>) -> Option<Vec<Vertex>> {
-    let mut res : Vec<Vertex> = Vec::new();
-    while indices.len() >= 3 {
-        let (vertex, rest) = indices.split_at(3);
-
-        let mut vert = Vertex::default();
-        
-        match pos.get(vertex[0] as usize) {
-            Some(position) => { vert.position = position.position; },
-            None => { return None; }
-        }
-
-        match norm.get(vertex[1] as usize) {
-            Some(normal) => { vert.normal = normal.normal; },
-            None => { return None; }
-        }
-
-        match tex_coords.get(vertex[2] as usize) {
-            Some(tex_coords) => { vert.tex_coords = tex_coords.coordinates; },
-            None => { return None; }
-        }
-
-        indices = Vec::from(rest);
-         
-        res.push(vert);
-    }
-    Some(res)
-}
-
-pub fn load_model(path: &str, display: &glium::Display) -> (glium::VertexBuffer<Vertex>, [[f32; 4]; 4]){
-    let source : String = std::fs::read_to_string(path).unwrap();
-    let (_, model): (&str, Collada) = collada_p().parse(&source[..]).unwrap();
-
-    let binding_pos = extract_positions(&model).unwrap();
-    let binding_norm = extract_normals(&model).unwrap();
-    let binding_tex = extract_texture_coordinates(&model).unwrap();
-    let binding_indx = extract_indices(&model).unwrap();
-
-    let vertex_array = pack_verts(binding_pos, binding_norm, binding_tex, binding_indx).unwrap();
-    (VertexBuffer::new(display, vertex_array.as_slice()).unwrap(), extract_transform_mat(&model).unwrap())
 }
 
 #[test]

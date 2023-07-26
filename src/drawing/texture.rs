@@ -1,10 +1,8 @@
-use glium::texture::RawImage2d;
 use glium::texture::texture2d::Texture2d;
 use glium::Display;
 
 use std::io::BufReader;
 use std::fs::File;
-use std::clone::Clone;
 
 pub struct Texture {
     id: u16,
