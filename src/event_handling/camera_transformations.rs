@@ -13,6 +13,7 @@ pub struct Camera {
     rot_speed: f32
 }
 
+#[derive(Debug)]
 pub enum CameraMovement {
     MovLeft,
     MovRight,

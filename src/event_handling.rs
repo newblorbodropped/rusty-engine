@@ -54,6 +54,7 @@ impl ModelType {
                     }
                 }
                 if !movements.is_empty() {
+                    println!("{:#?}", movements);
                     camera.apply_movement(movements);
                 }
             }
@@ -90,6 +91,16 @@ impl<T> EventHandler<T> {
                 },
                 _ => {}
             },
+            ev::Event::DeviceEvent{
+		device_id: _,
+		event: ev::DeviceEvent::Key(ev::KeyboardInput{
+		    virtual_keycode: Some(ev::VirtualKeyCode::Escape),
+                    state: ev::ElementState::Pressed,
+                    ..
+		})
+	    }=> {
+		self.params.quit = true;
+	    },
             ev::Event::DeviceEvent{
 		device_id: _,
 		event: ev::DeviceEvent::Key(ev::KeyboardInput{
