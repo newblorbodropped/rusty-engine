@@ -51,6 +51,9 @@ impl FnMut(ev::Event<'_, T>, &evl::EventLoopWindowTarget<T>, &mut evl::ControlFl
     //create a camera
     let camera = event_handling::camera_transformations::Camera::default();
 
+    //start timing
+    let mut prev_frame = std::time::Instant::now();
+    
     //create an event handler and regster the camera<
     let mut ev_handler = event_handling::EventHandler::new();
     let cam_binding = event_handling::ModelType::Camera(camera);
@@ -70,12 +73,19 @@ impl FnMut(ev::Event<'_, T>, &evl::EventLoopWindowTarget<T>, &mut evl::ControlFl
                                Some(&shaderpp_prog),
                                vec![&cube_tex, &floor_tex]);
 
+        let this_frame = std::time::Instant::now();
+        let delta_t = this_frame.duration_since(prev_frame).as_secs_f32();
+            
+        ev_handler.register_event(ev);
+        ev_handler.modify_models(delta_t);
+
+        prev_frame = std::time::Instant::now();
+
         let next_frame_time = std::time::Instant::now() +
             std::time::Duration::from_nanos(16_666_667);
         
-        ev_handler.register_event(ev);
-        ev_handler.modify_models();
         *control_flow = glutin::event_loop::ControlFlow::WaitUntil(next_frame_time);
+        
         if ev_handler.params.quit {
             *control_flow = glutin::event_loop::ControlFlow::Exit;
             return;

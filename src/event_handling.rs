@@ -14,7 +14,9 @@ pub enum ModelType {
 }
 
 impl ModelType {
-    fn apply_inputs(&mut self, inputs: &HashSet<ev::VirtualKeyCode, RandomState>) {
+    fn apply_inputs(&mut self,
+                    inputs: &HashSet<ev::VirtualKeyCode, RandomState>,
+                    delta_t: f32) {
         match self {
             ModelType::Camera(camera) => {
                 let mut  movements : Vec<camera_transformations::CameraMovement> = Vec::new();
@@ -54,8 +56,7 @@ impl ModelType {
                     }
                 }
                 if !movements.is_empty() {
-                    println!("{:#?}", movements);
-                    camera.apply_movement(movements);
+                    camera.apply_movement(movements, delta_t);
                 }
             }
         }
@@ -125,9 +126,9 @@ impl<T> EventHandler<T> {
         }
     }
 
-    pub fn modify_models(&mut self) {
+    pub fn modify_models(&mut self, delta_t: f32) {
         for i in 0..self.models.len() {
-            self.models[i].apply_inputs(&self.inputs);
+            self.models[i].apply_inputs(&self.inputs, delta_t);
         }
     }
 
