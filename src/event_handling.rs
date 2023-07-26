@@ -63,20 +63,18 @@ impl ModelType {
     }
 }
 
-pub struct EventHandler<T> {
+pub struct EventHandler {
     models: Vec<ModelType>,
     pub params: Params,
-    inputs: HashSet<ev::VirtualKeyCode, RandomState>,
-    phantom: std::marker::PhantomData<T>
+    inputs: HashSet<ev::VirtualKeyCode, RandomState>
 }
 
-impl<T> EventHandler<T> {
-    pub fn new() -> EventHandler<T> {
+impl EventHandler {
+    pub fn new() -> EventHandler {
         EventHandler {
             models: Vec::new(),
             params: Params { quit: false },
-            inputs: HashSet::new(),
-            phantom: core::marker::PhantomData
+            inputs: HashSet::new()
         }
     }
 
@@ -84,45 +82,30 @@ impl<T> EventHandler<T> {
         self.models.push(model);
     }
     
-    pub fn register_event(&mut self, event: ev::Event<T>) {
+    pub fn register_event(&mut self, event: ev::WindowEvent) {
         match event {
-            ev::Event::WindowEvent { event, .. } => match event {
-                ev::WindowEvent::CloseRequested => {
-                    self.params.quit = true;
-                },
-                _ => {}
+            ev::WindowEvent::CloseRequested => {
+                 self.params.quit = true;
+            }
+            ev::WindowEvent::KeyboardInput {
+                device_id: _,
+                input: keyboard_input,
+                ..
+            } => {
+                match keyboard_input.virtual_keycode {
+                    Some(keycode) => {
+                        if keycode == ev::VirtualKeyCode::Escape {
+                            self.params.quit = true;
+                        }
+                        match keyboard_input.state {
+                            ev::ElementState::Pressed => self.inputs.insert(keycode),
+                            ev::ElementState::Released => self.inputs.remove(&keycode),
+                        };
+                    },
+                    None => {}
+                }
             },
-            ev::Event::DeviceEvent{
-		device_id: _,
-		event: ev::DeviceEvent::Key(ev::KeyboardInput{
-		    virtual_keycode: Some(ev::VirtualKeyCode::Escape),
-                    state: ev::ElementState::Pressed,
-                    ..
-		})
-	    }=> {
-		self.params.quit = true;
-	    },
-            ev::Event::DeviceEvent{
-		device_id: _,
-		event: ev::DeviceEvent::Key(ev::KeyboardInput{
-		    virtual_keycode: Some(keycode),
-                    state: ev::ElementState::Pressed,
-                    ..
-		})
-	    } => {
-		self.inputs.insert(keycode);
-	    },
-            ev::Event::DeviceEvent{
-		device_id: _,
-		event: ev::DeviceEvent::Key(ev::KeyboardInput{
-		    virtual_keycode: Some(keycode),
-                    state: ev::ElementState::Released,
-                    ..
-		})
-	    } => {
-		self.inputs.remove(&keycode);
-	    },
-            _ => {} 
+            _ => {}
         }
     }
 

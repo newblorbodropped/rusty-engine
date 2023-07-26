@@ -64,31 +64,32 @@ impl FnMut(ev::Event<'_, T>, &evl::EventLoopWindowTarget<T>, &mut evl::ControlFl
     let floor_tex = Texture::from_file(2, &display);
     
     move |ev, _, control_flow| {
-        let camera = ev_handler.get_camera().unwrap();
-
-        drawing::render_meshes(vec![&cube, &floor],
-                               &camera,
-                               &display,
-                               vec![&shader_prog],
-                               Some(&shaderpp_prog),
-                               vec![&cube_tex, &floor_tex]);
-
-        let this_frame = std::time::Instant::now();
-        let delta_t = this_frame.duration_since(prev_frame).as_secs_f32();
-            
-        ev_handler.register_event(ev);
-        ev_handler.modify_models(delta_t);
-
-        prev_frame = std::time::Instant::now();
-
-        let next_frame_time = std::time::Instant::now() +
-            std::time::Duration::from_nanos(16_666_667);
-        
-        *control_flow = glutin::event_loop::ControlFlow::WaitUntil(next_frame_time);
-        
         if ev_handler.params.quit {
             *control_flow = glutin::event_loop::ControlFlow::Exit;
             return;
+        }
+
+        match ev {
+            ev::Event::RedrawEventsCleared => {
+                display.gl_window().window().request_redraw();
+            }
+            ev::Event::RedrawRequested(_) => {
+                let this_frame = std::time::Instant::now();
+                let delta_t = this_frame.duration_since(prev_frame).as_secs_f32();
+                ev_handler.modify_models(delta_t);
+                let camera = ev_handler.get_camera().unwrap();
+                drawing::render_meshes(vec![&cube, &floor],
+                                       &camera,
+                                       &display,
+                                       vec![&shader_prog],
+                                       Some(&shaderpp_prog),
+                                       vec![&cube_tex, &floor_tex]);
+                 prev_frame = std::time::Instant::now();
+            },
+            ev::Event::WindowEvent { event, .. } => {
+                ev_handler.register_event(event);
+            },           
+            _ => {}
         }
     }
 }

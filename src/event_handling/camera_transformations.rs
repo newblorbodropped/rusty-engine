@@ -37,8 +37,8 @@ impl Default for Camera {
             right: [1.0, 0.0, 0.0],
             view_aspect_ratio: asp,
             fov: 1.0,
-            mov_speed: 3.0,
-            rot_speed: 100.0
+            mov_speed: 0.02,
+            rot_speed: 0.5
         }
     }
 }
@@ -80,28 +80,28 @@ impl Camera {
                 },
                 CameraMovement::RotLeft => {
                     let rotmat : [[f32; 3]; 3] =
-                        linalg::rotmat([0.0, 1.0, 0.0], delta_t * self.rot_speed * (PI / 180.0));
+                        linalg::rotmat([0.0, 1.0, 0.0], self.rot_speed * (PI / 180.0));
                     self.up = linalg::matmulvec3(rotmat, self.up);
                     self.right = linalg::matmulvec3(rotmat, self.right);
                     self.front = linalg::matmulvec3(rotmat, self.front);
                 },
                 CameraMovement::RotRight => {
                     let rotmat : [[f32; 3]; 3] =
-                        linalg::rotmat([0.0, 1.0, 0.0], delta_t* (-1.0) * self.rot_speed * (PI / 180.0));
+                        linalg::rotmat([0.0, 1.0, 0.0], (-1.0) * self.rot_speed * (PI / 180.0));
                     self.up = linalg::matmulvec3(rotmat, self.up);
                     self.right = linalg::matmulvec3(rotmat, self.right);
                     self.front = linalg::matmulvec3(rotmat, self.front);
                 },
                 CameraMovement::RotUp => {
                     let rotmat : [[f32; 3]; 3] =
-                        linalg::rotmat(self.right, delta_t * self.rot_speed * (PI / 180.0));
+                        linalg::rotmat(self.right, self.rot_speed * (PI / 180.0));
                     self.up = linalg::matmulvec3(rotmat, self.up);
                     self.right = linalg::matmulvec3(rotmat, self.right);
                     self.front = linalg::matmulvec3(rotmat, self.front);
                 },
                 CameraMovement::RotDown => {
                     let rotmat : [[f32; 3]; 3] =
-                        linalg::rotmat(self.right, delta_t * (-1.0) * self.rot_speed * (PI / 180.0));
+                        linalg::rotmat(self.right, (-1.0) * self.rot_speed * (PI / 180.0));
                     self.up = linalg::matmulvec3(rotmat, self.up);
                     self.right = linalg::matmulvec3(rotmat, self.right);
                     self.front = linalg::matmulvec3(rotmat, self.front);
@@ -118,9 +118,9 @@ impl Camera {
             }
         };
         
-        self.position = [self.position[0] + delta_t * self.mov_speed * mov_dir[0],
-                         self.position[1] + delta_t * self.mov_speed * mov_dir[1],
-                         self.position[2] + delta_t * self.mov_speed * mov_dir[2]];
+        self.position = [self.position[0] + self.mov_speed * mov_dir[0],
+                         self.position[1] + self.mov_speed * mov_dir[1],
+                         self.position[2] + self.mov_speed * mov_dir[2]];
     }
 }
 
