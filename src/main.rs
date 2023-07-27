@@ -53,7 +53,6 @@ impl FnMut(ev::Event<'_, T>, &evl::EventLoopWindowTarget<T>, &mut evl::ControlFl
 
     //start timing
     let start_time = std::time::Instant::now();
-    let mut prev_frame = std::time::Instant::now();
     
     //create an event handler and regster the camera<
     let mut ev_handler = event_handling::EventHandler::new();
@@ -76,9 +75,8 @@ impl FnMut(ev::Event<'_, T>, &evl::EventLoopWindowTarget<T>, &mut evl::ControlFl
             }
             ev::Event::RedrawRequested(_) => {
                 let this_frame = std::time::Instant::now();
-                let delta_t = this_frame.duration_since(prev_frame).as_secs_f32();
                 let time = this_frame.duration_since(start_time).as_secs_f32();
-                ev_handler.modify_models(delta_t);
+                ev_handler.modify_models();
                 let camera = ev_handler.get_camera().unwrap();
                 drawing::render_meshes(vec![&cube, &floor],
                                        &camera,
@@ -87,7 +85,6 @@ impl FnMut(ev::Event<'_, T>, &evl::EventLoopWindowTarget<T>, &mut evl::ControlFl
                                        Some(&shaderpp_prog),
                                        vec![&cube_tex, &floor_tex],
                                        time);
-                 prev_frame = std::time::Instant::now();
             },
             ev::Event::WindowEvent { event, .. } => {
                 ev_handler.register_event(event);

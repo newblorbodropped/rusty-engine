@@ -44,7 +44,7 @@ impl Default for Camera {
 }
 
 impl Camera {
-    pub fn apply_movement(&mut self, actions: Vec<CameraMovement>, delta_t: f32) {
+    pub fn apply_movement(&mut self, actions: Vec<CameraMovement>) {
         let mut mov_dir : [f32; 3] = [0.0, 0.0, 0.0];
         for action in actions.iter() {
             match action {

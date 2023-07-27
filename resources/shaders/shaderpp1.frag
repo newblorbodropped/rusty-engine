@@ -48,7 +48,7 @@ void main() {
   vec4 wn = vec4(0.0, 0.0, 0.0, 1.0);
 
   vec2 crtp = crt_pos(out_position);
-  float cm = 1.0 - max(abs(crtp.x), abs(crtp.y)); 
+  float cm = min(1.0, 8.0 * (1.0 - max(abs(crtp.x), abs(crtp.y)))); 
 
   if (abs(crtp.x) <= 1 && abs(crtp.y) <= 1) {
     lc = cm * texture(color_sampler, image_pos);
