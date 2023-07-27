@@ -63,7 +63,7 @@ impl FnMut(ev::Event<'_, T>, &evl::EventLoopWindowTarget<T>, &mut evl::ControlFl
     let cube_tex = Texture::from_file(1, &display);
     let floor_tex = Texture::from_file(2, &display);
     
-    move |ev, _, control_flow| {
+    move |ev, _, control_flow| {    
         if ev_handler.params.quit {
             *control_flow = glutin::event_loop::ControlFlow::Exit;
             return;
@@ -110,6 +110,7 @@ fn main() {
         let fs = glutin::window::Fullscreen::Borderless(Some(monitor_handle));
         display.gl_window().window().set_fullscreen(Some(fs));
         display.gl_window().window().set_cursor_visible(false);
+        display.gl_window().window().set_cursor_grab(glutin::window::CursorGrabMode::Confined);
     }
     
     event_loop.run(event_handler_gen(display));
