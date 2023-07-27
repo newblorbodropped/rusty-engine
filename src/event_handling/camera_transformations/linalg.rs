@@ -1,3 +1,25 @@
+pub fn mag(vec: [f32; 3]) -> f32 {
+    (vec[0] * vec[0] + vec[1] * vec[1] + vec[2] * vec[2]).sqrt()
+}
+
+pub fn norm(vec: [f32; 3]) -> [f32; 3] {
+    let mag = mag(vec);
+    if mag > f32::EPSILON {
+        [ vec[0] / mag, vec[1] / mag, vec[2] / mag ]
+    } else {
+        [ 0.0, 0.0, 0.0 ]
+    }
+}
+
+#[allow(dead_code)]
+pub fn cross(vec0: [f32; 3], vec1: [f32; 3]) -> [f32; 3] {
+    [
+        vec0[1] * vec1[2] - vec0[2] * vec1[1],
+        vec0[2] * vec1[0] - vec0[0] * vec1[2],
+        vec0[0] * vec1[1] - vec0[1] * vec1[0]
+    ]
+}
+
 pub fn matmulvec3(mat: [[f32; 3]; 3], vec: [f32; 3]) -> [f32; 3] {
     [
         mat[0][0] * vec[0] + mat[0][1] * vec[1] + mat[0][2] * vec[2],

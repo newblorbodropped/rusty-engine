@@ -24,7 +24,8 @@ pub enum CameraMovement {
     RotLeft,
     RotRight,
     RotUp,
-    RotDown
+    RotDown,
+    RotateDir(f64, f64)
 }
 
 impl Default for Camera {
@@ -106,17 +107,25 @@ impl Camera {
                     self.right = linalg::matmulvec3(rotmat, self.right);
                     self.front = linalg::matmulvec3(rotmat, self.front);
                 }
+                CameraMovement::RotateDir(dx, dy) => {
+                    let degree = (-1.0) * self.rot_speed * (PI / 180.0);
+
+                    let rotmat : [[f32; 3]; 3] =
+                        linalg::rotmat(self.right,  *dy as f32 * degree);
+                    self.up = linalg::matmulvec3(rotmat, self.up);
+                    self.right = linalg::matmulvec3(rotmat, self.right);
+                    self.front = linalg::matmulvec3(rotmat, self.front);
+
+                    let rotmat : [[f32; 3]; 3] =
+                        linalg::rotmat([0.0, 1.0, 0.0], *dx as f32 * degree);
+                    self.up = linalg::matmulvec3(rotmat, self.up);
+                    self.right = linalg::matmulvec3(rotmat, self.right);
+                    self.front = linalg::matmulvec3(rotmat, self.front);
+                }
             }
         }
 
-        mov_dir = {
-            let norm = (mov_dir[0] * mov_dir[0] + mov_dir[1] * mov_dir[1] + mov_dir[2] * mov_dir[2]).sqrt();
-            if norm > 0.01 {
-                [mov_dir[0] / norm, mov_dir[1]/ norm, mov_dir[2] / norm]
-            } else {
-                [0.0, 0.0, 0.0]
-            }
-        };
+        mov_dir = linalg::norm(mov_dir);
         
         self.position = [self.position[0] + self.mov_speed * mov_dir[0],
                          self.position[1] + self.mov_speed * mov_dir[1],

@@ -87,8 +87,11 @@ impl FnMut(ev::Event<'_, T>, &evl::EventLoopWindowTarget<T>, &mut evl::ControlFl
                                        time);
             },
             ev::Event::WindowEvent { event, .. } => {
-                ev_handler.register_event(event);
-            },           
+                ev_handler.register_window_event(event);
+            },
+            ev::Event::DeviceEvent { event, .. } => {
+                ev_handler.register_device_event(event);
+            }
             _ => {}
         }
     }
@@ -106,6 +109,7 @@ fn main() {
         let monitor_handle = display.gl_window().window().available_monitors().next().unwrap();
         let fs = glutin::window::Fullscreen::Borderless(Some(monitor_handle));
         display.gl_window().window().set_fullscreen(Some(fs));
+        display.gl_window().window().set_cursor_visible(false);
     }
     
     event_loop.run(event_handler_gen(display));

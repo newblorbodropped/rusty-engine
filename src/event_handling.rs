@@ -15,12 +15,13 @@ pub enum ModelType {
 
 impl ModelType {
     fn apply_inputs(&mut self,
-                    inputs: &HashSet<ev::VirtualKeyCode, RandomState>) {
+                    keypresses: &HashSet<ev::VirtualKeyCode, RandomState>,
+                    mouse_move: &Option<(f64, f64)>) {
         match self {
             ModelType::Camera(camera) => {
                 let mut  movements : Vec<camera_transformations::CameraMovement> = Vec::new();
-                for input in inputs {
-                    match input {
+                for keypress in keypresses {
+                    match keypress {
                         ev::VirtualKeyCode::W => {
                             movements.push(camera_transformations::CameraMovement::MovForward);
                         },
@@ -54,6 +55,14 @@ impl ModelType {
                         _ => {}
                     }
                 }
+
+                match *mouse_move {
+                    Some((dx, dy)) => {
+                        movements.push(camera_transformations::CameraMovement::RotateDir(dx, dy));
+                        }
+                    None => {}
+                }
+                
                 if !movements.is_empty() {
                     camera.apply_movement(movements);
                 }
@@ -65,7 +74,8 @@ impl ModelType {
 pub struct EventHandler {
     models: Vec<ModelType>,
     pub params: Params,
-    inputs: HashSet<ev::VirtualKeyCode, RandomState>
+    keypresses: HashSet<ev::VirtualKeyCode, RandomState>,
+    mouse_move: Option<(f64, f64)> 
 }
 
 impl EventHandler {
@@ -73,7 +83,8 @@ impl EventHandler {
         EventHandler {
             models: Vec::new(),
             params: Params { quit: false },
-            inputs: HashSet::new()
+            keypresses: HashSet::new(),
+            mouse_move: None
         }
     }
 
@@ -81,7 +92,7 @@ impl EventHandler {
         self.models.push(model);
     }
     
-    pub fn register_event(&mut self, event: ev::WindowEvent) {
+    pub fn register_window_event(&mut self, event: ev::WindowEvent) {
         match event {
             ev::WindowEvent::CloseRequested => {
                  self.params.quit = true;
@@ -97,8 +108,8 @@ impl EventHandler {
                             self.params.quit = true;
                         }
                         match keyboard_input.state {
-                            ev::ElementState::Pressed => self.inputs.insert(keycode),
-                            ev::ElementState::Released => self.inputs.remove(&keycode),
+                            ev::ElementState::Pressed => self.keypresses.insert(keycode),
+                            ev::ElementState::Released => self.keypresses.remove(&keycode),
                         };
                     },
                     None => {}
@@ -108,10 +119,20 @@ impl EventHandler {
         }
     }
 
+    pub fn register_device_event(&mut self, event: ev::DeviceEvent) {
+        match event {
+            ev::DeviceEvent::MouseMotion{delta: (dx, dy)} => {
+                self.mouse_move = Some((dx, dy));
+            },
+            _ => {}
+        }
+    }
+
     pub fn modify_models(&mut self) {
         for i in 0..self.models.len() {
-            self.models[i].apply_inputs(&self.inputs);
+            self.models[i].apply_inputs(&self.keypresses, &self.mouse_move);
         }
+        self.mouse_move = None;
     }
 
     pub fn get_camera(&self) -> Option<&camera_transformations::Camera> {
