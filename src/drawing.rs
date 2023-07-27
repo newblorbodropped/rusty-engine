@@ -31,7 +31,8 @@ pub fn render_meshes(meshes: Vec<&mesh::Mesh>,
                      display: &glium::Display,
                      shaders: Vec<&ShaderProg>,
                      postpr_shader: Option<&ShaderProg>,
-                     textures: Vec<&Texture>) {
+                     textures: Vec<&Texture>,
+                     time: f32) {
     let mut target = display.draw();
     let target_dimensions = target.get_dimensions();
     let target_color = Texture2d::empty(display,
@@ -120,7 +121,9 @@ pub fn render_meshes(meshes: Vec<&mesh::Mesh>,
     match postpr_shader {
         Some(prog) => {
             let uniforms = uniform! {
-                tex: target_color
+                color_sampler: target_color,
+                time: time,
+                resolution: [target_dimensions.0 as f32, target_dimensions.1 as f32]
             };
             target.draw(&postpr_vertex_buffer,
                         NoIndices(PrimitiveType::TrianglesList),

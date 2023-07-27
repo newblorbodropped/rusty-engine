@@ -1,7 +1,8 @@
 #version 140
 in vec2 out_position;
 
-uniform sampler2D tex;
+uniform sampler2D color_sampler;
+uniform vec2 resolution;
 
 out vec4 color;
 
@@ -10,5 +11,5 @@ vec2 tex_coords() {
 }
 
 void main() {
-  color = texture(tex, tex_coords());
+  color = texture(color_sampler, tex_coords());
 }
