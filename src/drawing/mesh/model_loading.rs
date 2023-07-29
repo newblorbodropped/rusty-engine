@@ -1,4 +1,6 @@
 use glium::implement_vertex;
+use serde::{Deserialize, Serialize};
+
 use crate::drawing::mesh::model_loading::collada_parsing::{Collada, TagParameter};
 
 pub mod collada_parsing;
@@ -6,6 +8,7 @@ pub mod collada_parsing;
 #[derive(Clone)]
 #[derive(Copy)]
 #[derive(Debug)]
+#[derive(Serialize, Deserialize)]
 pub struct Vertex {
     pub position: (f32, f32, f32),
     pub normal: (f32, f32, f32),
@@ -25,6 +28,7 @@ impl Default for Vertex {
 #[derive(Clone)]
 #[derive(Copy)]
 #[derive(Debug)]
+#[derive(Serialize, Deserialize)]
 pub struct Position {
     pub position: (f32, f32, f32)
 }
@@ -40,6 +44,7 @@ impl Default for Position {
 #[derive(Clone)]
 #[derive(Copy)]
 #[derive(Debug)]
+#[derive(Serialize, Deserialize)]
 pub struct Normal {
     pub normal: (f32, f32, f32)
 }
@@ -55,6 +60,7 @@ impl Default for Normal {
 #[derive(Clone)]
 #[derive(Copy)]
 #[derive(Debug)]
+#[derive(Serialize, Deserialize)]
 pub struct TextureCoordinates {
     pub coordinates: (f32, f32)
 }

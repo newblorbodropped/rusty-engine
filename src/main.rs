@@ -17,12 +17,14 @@ mod event_handling;
 
 struct Params {
     full_screen: bool,
-    post_pr_id: u16
+    post_pr_id: u16,
+    buffer_data: bool
 }
 
 fn parse_params(params: Vec<String>) -> Result<Params, String> {
     let mut full_screen = false;
     let mut post_pr_id : u16 = 0;
+    let mut buffer_data = false;
 
     let mut param_iter = params.iter();
 
@@ -44,7 +46,10 @@ fn parse_params(params: Vec<String>) -> Result<Params, String> {
                         }
                     }
                 }
-            }
+            },
+            "-b" => {
+                buffer_data = true;
+            },
             ukwn => {
                 let error_message = "Invalid argument given: ".to_owned() + ukwn;
                 return Err(error_message);
@@ -54,7 +59,8 @@ fn parse_params(params: Vec<String>) -> Result<Params, String> {
 
     Ok(Params {
         full_screen: full_screen,
-        post_pr_id: post_pr_id
+        post_pr_id: post_pr_id,
+        buffer_data: buffer_data
     })
 }
 
@@ -63,10 +69,10 @@ impl FnMut(ev::Event<'_, T>, &evl::EventLoopWindowTarget<T>, &mut evl::ControlFl
     //load the models
     let mut cube = Mesh::new_with_id_shader_tex(1, 1, 1);
     let mut floor = Mesh::new_with_id_shader_tex(4, 1, 2);
-    
+
     cube.load_geometry();
     cube.buffer_unindexed(&display);
-
+    
     floor.set_offset((0.0 as f32, -1.0 as f32, 0.0 as f32));
     floor.load_geometry();
     floor.buffer_unindexed(&display);
@@ -129,26 +135,44 @@ fn main() {
 
     match params {
         Ok(par) => {
-            let event_loop = glutin::event_loop::EventLoop::new();
-            let wb = glutin::window::WindowBuilder::new();
-            let cb = glutin::ContextBuilder::new().with_depth_buffer(24);
-            let display = glium::Display::new(wb, cb, &event_loop).unwrap();
+            if par.buffer_data {
+                let mut cube = Mesh::new_with_id_shader_tex(1, 1, 1);
+                let mut floor = Mesh::new_with_id_shader_tex(4, 1, 2);
 
-            if par.full_screen {
-                let monitor_handle = display.gl_window().window().available_monitors().next().unwrap();
-                let fs = glutin::window::Fullscreen::Borderless(Some(monitor_handle));
-                display.gl_window().window().set_fullscreen(Some(fs));
-                display.gl_window().window().set_cursor_visible(false);
-                display.gl_window().window()
-                    .set_cursor_grab(glutin::window::CursorGrabMode::Confined)
-                    .or_else(|_e| {
-                        display.gl_window().window()
+                cube.load_geometry();
+                floor.load_geometry();
+
+                match cube.store_to_bin() {
+                    Ok(()) => println!("Successfully buffered the cube data!"),
+                    Err(err) => err.print_formatted()
+                }
+
+                match floor.store_to_bin() {
+                    Ok(()) => println!("Successfully buffered the floor data!"),
+                    Err(err) => err.print_formatted()
+                }
+            } else {          
+                let event_loop = glutin::event_loop::EventLoop::new();
+                let wb = glutin::window::WindowBuilder::new();
+                let cb = glutin::ContextBuilder::new().with_depth_buffer(24);
+                let display = glium::Display::new(wb, cb, &event_loop).unwrap();
+                
+                if par.full_screen {
+                    let monitor_handle = display.gl_window().window().available_monitors().next().unwrap();
+                    let fs = glutin::window::Fullscreen::Borderless(Some(monitor_handle));
+                    display.gl_window().window().set_fullscreen(Some(fs));
+                    display.gl_window().window().set_cursor_visible(false);
+                    display.gl_window().window()
+                        .set_cursor_grab(glutin::window::CursorGrabMode::Confined)
+                        .or_else(|_e| {
+                            display.gl_window().window()
                             .set_cursor_grab(glutin::window::CursorGrabMode::Locked)
-                    })
-                    .unwrap();
+                        })
+                        .unwrap();
+                }
+                
+                event_loop.run(event_handler_gen(display, par.post_pr_id));
             }
-            
-            event_loop.run(event_handler_gen(display, par.post_pr_id));
         },
         Err(message) =>  {
             println!("{}", message);
