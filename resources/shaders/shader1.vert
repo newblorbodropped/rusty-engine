@@ -70,9 +70,7 @@ void main() {
   
   gl_Position = projection_matrix() * vec4(aligned_pos, 1.0);
   
-  //vec4 new_pos = projection_matrix() * vec4(position, 1.0);
-  out_position = gl_Position.xyz;
+  out_position = aligned_pos;
   out_normal = align_matrix * (trans_mat * vec4(normal, 1.0)).xyz;
   out_tex_coords = tex_coords;
-  //gl_Position = new_pos;
 }
