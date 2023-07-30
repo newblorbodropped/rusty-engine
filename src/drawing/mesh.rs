@@ -361,26 +361,36 @@ impl MeshConfig {
 
                     .and(parsing::parse_ws().maybe())
                     .and(parsing::parse_token(","))
-                    .map( |(((_id_str, id), _ws), _comma)| id )
+                    .and(parsing::parse_ws().maybe())
+                    .map( |((((_id_str, id), _ws0), _comma), _ws1)| id )
             ).and(
                 parsing::parse_token("shader: ")
                     .and(parsing::parse_u16())
                     .and(parsing::parse_ws().maybe())
                     .and(parsing::parse_token(","))
-                    .map( |(((_shader_str, shader), _ws), _comma)| shader )
+                    .and(parsing::parse_ws().maybe())
+                    .map( |((((_shader_str, shader), _ws0), _comma), _ws1)| shader )
             ).and(
                 parsing::parse_token("texture: ")
                     .and(parsing::parse_u16())
                     .and(parsing::parse_ws().maybe())
                     .and(parsing::parse_token(","))
-                    .map( |(((_texture_str, texture), _ws), _comma)| texture )
+                    .and(parsing::parse_ws().maybe())
+                    .map( |((((_texture_str, texture), _ws0), _comma), _ws1)| texture )
             ).and(
                 parsing::parse_token("offset: (")
-                    .and(parsing::parse_scientific().many_delim(parsing::parse_token(",")))
+                    .and(parsing::parse_scientific().many_delim(
+                        parsing::parse_ws().maybe().and(
+                            parsing::parse_token(",")
+                        ).and(
+                            parsing::parse_ws().maybe()
+                        )
+                    ))
                     .and(parsing::parse_token(")"))
                     .and(parsing::parse_ws().maybe())
                     .and(parsing::parse_token(","))
-                    .map( |((((_offset_str, offset), _par), _ws), _comma)| offset )
+                    .and(parsing::parse_ws().maybe())
+                    .map( |(((((_offset_str, offset), _par), _ws0), _comma), _ws1)| offset )
             ).and(
                 parsing::parse_token("scale: ")
                     .and(parsing::parse_scientific())
@@ -459,7 +469,6 @@ impl SceneConfig {
         }
     }
 }
-
 
 #[derive(Debug)]
 pub enum SceneLoadError {
