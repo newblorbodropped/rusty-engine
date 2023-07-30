@@ -240,7 +240,7 @@ fn parse_until_l<'a>(cs: Vec<char>) -> impl Parser<&'a str, &'a str> {
     }
 }
 
-fn parse_ws<'a: 'b, 'b>() -> impl Parser<(), &'a str> + 'b {
+pub fn parse_ws<'a: 'b, 'b>() -> impl Parser<(), &'a str> + 'b {
     move |input: &'a str| {
         match input.chars().next() {
             None => None,
@@ -255,7 +255,7 @@ fn parse_ws<'a: 'b, 'b>() -> impl Parser<(), &'a str> + 'b {
     }
 }
 
-fn parse_token<'a: 'b, 'b>(token: &'b str) -> impl Parser<&str, &'a str> + 'b {
+pub fn parse_token<'a: 'b, 'b>(token: &'b str) -> impl Parser<&str, &'a str> + 'b {
     move |input: &'a str| {
         match input.strip_prefix(token) {
             Some(rest) => Some((rest, &input[..token.len()])),
@@ -284,6 +284,23 @@ fn parse_digit<'a: 'b, 'b>() -> impl Parser<u32 , &'a str> + 'b{
         } else {
             None
         }
+    }
+}
+
+pub fn parse_u16<'a>() -> impl Parser<u16, &'a str> {
+    move |input: &'a str| {       
+        (parse_digit().many()).map(
+            |t: Vec<u32>| {
+                let mut res: u16 = 0;
+                let mut digits = t;
+                let mut i: u32 = 0;
+                while let Some(k) = digits.pop() {
+                    res += (k as u16)*(u16::pow(10, i));
+                    i += 1;
+                }
+                res
+            }
+        ).parse(input)
     }
 }
 
@@ -362,7 +379,7 @@ fn parse_float<'a>() -> impl Parser<f32, &'a str> {
     }
 }
 
-fn parse_scientific<'a>() -> impl Parser<f32, &'a str> {
+pub fn parse_scientific<'a>() -> impl Parser<f32, &'a str> {
     move |input: &'a str| {
         (parse_token("-").and(
             parse_float()

@@ -9,6 +9,7 @@ use glium::glutin::event as ev;
 use glium::glutin::event_loop as evl;
 
 use crate::drawing::mesh::Mesh;
+use crate::drawing::mesh;
 use crate::drawing::shader_compilation::ShaderProg;
 use crate::drawing::texture::Texture;
 
@@ -18,13 +19,15 @@ mod event_handling;
 struct Params {
     full_screen: bool,
     post_pr_id: u16,
-    buffer_data: bool
+    buffer_data: bool,
+    scene_file: Option<String>
 }
 
 fn parse_params(params: Vec<String>) -> Result<Params, String> {
     let mut full_screen = false;
     let mut post_pr_id : u16 = 0;
     let mut buffer_data = false;
+    let mut scene_file : Option<String> = None;
 
     let mut param_iter = params.iter();
 
@@ -50,6 +53,14 @@ fn parse_params(params: Vec<String>) -> Result<Params, String> {
             "-b" => {
                 buffer_data = true;
             },
+            "-s" => {
+                match param_iter.next() {
+                    None => { return Err("No scene config file given.".to_owned()); },
+                    Some(scene) => {
+                        scene_file = Some(scene.to_owned())
+                    }
+                }
+            },
             ukwn => {
                 let error_message = "Invalid argument given: ".to_owned() + ukwn;
                 return Err(error_message);
@@ -60,48 +71,57 @@ fn parse_params(params: Vec<String>) -> Result<Params, String> {
     Ok(Params {
         full_screen: full_screen,
         post_pr_id: post_pr_id,
-        buffer_data: buffer_data
+        buffer_data: buffer_data,
+        scene_file: scene_file
     })
 }
 
-fn event_handler_gen<T>(display: glium::Display, post_pr_id: u16) ->
+fn event_handler_gen<T>(display: glium::Display, scene_file: &str, post_pr_id: u16) ->
 impl FnMut(ev::Event<'_, T>, &evl::EventLoopWindowTarget<T>, &mut evl::ControlFlow){
-    //load the models
-    let mut cube = Mesh::new_with_id_shader_tex(1, 1, 1);
-    let mut floor = Mesh::new_with_id_shader_tex(4, 1, 2);
-
-    cube.load_geometry();
-    cube.buffer_unindexed(&display);
+    //load the scene
+    let conf = mesh::SceneConfig::load_scene_config(scene_file).unwrap();
     
-    floor.set_offset((0.0 as f32, -1.0 as f32, 0.0 as f32));
-    floor.load_geometry();
-    floor.buffer_unindexed(&display);
-
-    //load the shader programs
-    let shader_prog = ShaderProg::load_from_file(1, &display);
-    let shaderpp_prog = ShaderProg::load_from_file_pp(post_pr_id, &display);
-
-    //create a camera
-    let camera = event_handling::camera_transformations::Camera::default();
-
-    //start timing
+    //load meshes and extract shader_id, texture_id
+    let mut meshes = conf.construct_meshes();
+    
+    let shader_ids : Vec<u16> = meshes.iter().map(|mesh| mesh.shader_id).collect();
+    let texture_ids : Vec<u16> = meshes.iter().map(|mesh| mesh.texture_id).collect();
+    
+    for mesh in &mut meshes {
+        mesh.load_geometry();
+        mesh.buffer_unindexed(&display);
+    }
+    
+            //start timer
     let start_time = std::time::Instant::now();
     
     //create an event handler and regster the camera<
     let mut ev_handler = event_handling::EventHandler::new();
+    let camera = event_handling::camera_transformations::Camera::default();
     let cam_binding = event_handling::ModelType::Camera(camera);
     ev_handler.add_model(cam_binding);
 
-    //load all the model textures
-    let cube_tex = Texture::from_file(1, &display);
-    let floor_tex = Texture::from_file(2, &display);
+    //fetch the shaders and textures
+    let mut shaders : Vec<ShaderProg> = Vec::new();
+    let mut textures : Vec<Texture> = Vec::new();
     
-    move |ev, _, control_flow| {    
+    for shader_id in shader_ids {
+        shaders.push(ShaderProg::load_from_file(shader_id, &display));
+    }
+    
+    for texture_id in texture_ids {
+        textures.push(Texture::from_file(texture_id, &display));
+    }
+    
+    let shaderpp_prog = ShaderProg::load_from_file_pp(post_pr_id, &display);
+    
+    move |ev, _, control_flow: &mut glutin::event_loop::ControlFlow| {    
+        
         if ev_handler.params.quit {
             *control_flow = glutin::event_loop::ControlFlow::Exit;
             return;
         }
-
+        
         match ev {
             ev::Event::RedrawEventsCleared => {
                 display.gl_window().window().request_redraw();
@@ -111,12 +131,12 @@ impl FnMut(ev::Event<'_, T>, &evl::EventLoopWindowTarget<T>, &mut evl::ControlFl
                 let time = this_frame.duration_since(start_time).as_secs_f32();
                 ev_handler.modify_models();
                 let camera = ev_handler.get_camera().unwrap();
-                drawing::render_meshes(vec![&cube, &floor],
+                drawing::render_meshes(meshes.iter().collect(),
                                        &camera,
                                        &display,
-                                       vec![&shader_prog],
+                                       shaders.iter().collect(),
                                        Some(&shaderpp_prog),
-                                       vec![&cube_tex, &floor_tex],
+                                       textures.iter().collect(),
                                        time);
             },
             ev::Event::WindowEvent { event, .. } => {
@@ -128,6 +148,7 @@ impl FnMut(ev::Event<'_, T>, &evl::EventLoopWindowTarget<T>, &mut evl::ControlFl
             _ => {}
         }
     }
+    
 }
 
 fn main() {
@@ -135,43 +156,55 @@ fn main() {
 
     match params {
         Ok(par) => {
-            if par.buffer_data {
-                let mut cube = Mesh::new_with_id_shader_tex(1, 1, 1);
-                let mut floor = Mesh::new_with_id_shader_tex(4, 1, 2);
-
-                cube.load_geometry();
-                floor.load_geometry();
-
-                match cube.store_to_bin() {
-                    Ok(()) => println!("Successfully buffered the cube data!"),
-                    Err(err) => err.print_formatted()
-                }
-
-                match floor.store_to_bin() {
-                    Ok(()) => println!("Successfully buffered the floor data!"),
-                    Err(err) => err.print_formatted()
-                }
-            } else {          
-                let event_loop = glutin::event_loop::EventLoop::new();
-                let wb = glutin::window::WindowBuilder::new();
-                let cb = glutin::ContextBuilder::new().with_depth_buffer(24);
-                let display = glium::Display::new(wb, cb, &event_loop).unwrap();
-                
-                if par.full_screen {
-                    let monitor_handle = display.gl_window().window().available_monitors().next().unwrap();
-                    let fs = glutin::window::Fullscreen::Borderless(Some(monitor_handle));
-                    display.gl_window().window().set_fullscreen(Some(fs));
-                    display.gl_window().window().set_cursor_visible(false);
-                    display.gl_window().window()
-                        .set_cursor_grab(glutin::window::CursorGrabMode::Confined)
-                        .or_else(|_e| {
+            match par.scene_file {
+                Some(scene_file) => {
+                    if par.buffer_data {
+                        let mut cube = Mesh::new_with_id_shader_tex(1, 1, 1);
+                        let mut floor = Mesh::new_with_id_shader_tex(4, 1, 2);
+                        
+                        cube.load_geometry();
+                        floor.load_geometry();
+                        
+                        match cube.store_to_bin() {
+                            Ok(()) => println!("Successfully buffered the cube data!"),
+                            Err(err) => err.print_formatted()
+                        }
+                        
+                        match floor.store_to_bin() {
+                            Ok(()) => println!("Successfully buffered the floor data!"),
+                            Err(err) => err.print_formatted()
+                        }
+                    } else {          
+                        let event_loop = glutin::event_loop::EventLoop::new();
+                        let wb = glutin::window::WindowBuilder::new();
+                        let cb = glutin::ContextBuilder::new().with_depth_buffer(24);
+                        let display = glium::Display::new(wb, cb, &event_loop).unwrap();
+                        
+                        if par.full_screen {
+                            let monitor_handle = display
+                                .gl_window()
+                                .window()
+                                .available_monitors()
+                                .next()
+                                .unwrap();
+                            let fs = glutin::window::Fullscreen::Borderless(Some(monitor_handle));
+                            display.gl_window().window().set_fullscreen(Some(fs));
+                            display.gl_window().window().set_cursor_visible(false);
                             display.gl_window().window()
-                            .set_cursor_grab(glutin::window::CursorGrabMode::Locked)
-                        })
-                        .unwrap();
+                                .set_cursor_grab(glutin::window::CursorGrabMode::Confined)
+                                .or_else(|_e| {
+                                    display.gl_window().window()
+                                        .set_cursor_grab(glutin::window::CursorGrabMode::Locked)
+                                })
+                                .unwrap();
+                        }
+                        
+                        event_loop.run(event_handler_gen(display, &scene_file, par.post_pr_id));
+                    }
+                },
+                None => {
+                    println!("No scene configuration given.")
                 }
-                
-                event_loop.run(event_handler_gen(display, par.post_pr_id));
             }
         },
         Err(message) =>  {

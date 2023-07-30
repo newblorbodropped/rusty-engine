@@ -1,9 +1,9 @@
 use glium::implement_vertex;
 use serde::{Deserialize, Serialize};
 
-use crate::drawing::mesh::model_loading::collada_parsing::{Collada, TagParameter};
+use crate::drawing::mesh::model_loading::parsing::{Collada, TagParameter};
 
-pub mod collada_parsing;
+pub mod parsing;
 
 #[derive(Clone)]
 #[derive(Copy)]

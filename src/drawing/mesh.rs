@@ -4,7 +4,8 @@ use glium::vertex::VertexBuffer;
 use serde::{Deserialize, Serialize};
 
 use model_loading::{ Position, Normal, TextureCoordinates , Vertex };
-use model_loading::collada_parsing::Parser;
+use model_loading::parsing::Parser;
+use model_loading::parsing;
 
 pub mod model_loading;
 
@@ -151,7 +152,7 @@ impl Mesh {
                 pathstr.push_str(".dae");
                 let path = std::path::Path::new(&pathstr); 
                 let source = std::fs::read_to_string(path).unwrap();
-                let (_, collada_model) = model_loading::collada_parsing::collada_p()
+                let (_, collada_model) = model_loading::parsing::collada_p()
                     .parse(&source[..])
                     .unwrap();
                 
@@ -340,3 +341,129 @@ impl MeshStorageError {
         }
     }
 }
+
+struct MeshConfig {
+    id: u16,
+    shader: u16,
+    texture: u16,
+    offset: (f32, f32, f32),
+    scale: f32
+}
+
+impl MeshConfig {
+    fn mesh_config_parser<'a>() -> impl Parser<Self, &'a str> {
+        move |input: &'a str| {
+            parsing::parse_token("{").and(
+                parsing::parse_ws().maybe()
+            ).and(
+                parsing::parse_token("id: ")
+                    .and(parsing::parse_u16())
+
+                    .and(parsing::parse_ws().maybe())
+                    .and(parsing::parse_token(","))
+                    .map( |(((_id_str, id), _ws), _comma)| id )
+            ).and(
+                parsing::parse_token("shader: ")
+                    .and(parsing::parse_u16())
+                    .and(parsing::parse_ws().maybe())
+                    .and(parsing::parse_token(","))
+                    .map( |(((_shader_str, shader), _ws), _comma)| shader )
+            ).and(
+                parsing::parse_token("texture: ")
+                    .and(parsing::parse_u16())
+                    .and(parsing::parse_ws().maybe())
+                    .and(parsing::parse_token(","))
+                    .map( |(((_texture_str, texture), _ws), _comma)| texture )
+            ).and(
+                parsing::parse_token("offset: (")
+                    .and(parsing::parse_scientific().many_delim(parsing::parse_token(",")))
+                    .and(parsing::parse_token(")"))
+                    .and(parsing::parse_ws().maybe())
+                    .and(parsing::parse_token(","))
+                    .map( |((((_offset_str, offset), _par), _ws), _comma)| offset )
+            ).and(
+                parsing::parse_token("scale: ")
+                    .and(parsing::parse_scientific())
+                    .and(parsing::parse_ws().maybe())
+                    .map( |((_scale_str, scale), _ws)| scale )
+            ).and(
+                parsing::parse_token("}")
+            ).map( |(((((((_br0, _ws), id), shader), tex), offset), scale),_br1)| {
+                MeshConfig {
+                    id: id,
+                    shader: shader,
+                    texture: tex,
+                    offset: (offset[0], offset[1], offset[2]),
+                    scale: scale
+                }
+            }).parse(input)
+        }
+    }
+}
+
+pub struct SceneConfig { meshes: Vec<MeshConfig> }
+
+impl SceneConfig {
+    pub fn load_scene_config(source: &str) -> Result<Self, SceneLoadError> {
+        let mut pathstr = std::string::String::new();
+        pathstr.push_str("./resources/scenes/");
+        pathstr.push_str(source.clone());
+        let path = std::path::Path::new(&pathstr);
+
+        match std::fs::read_to_string(path) {
+            Ok(source) => {
+                match Self::scene_config_parser().parse(&source) {
+                    Some(conf) => {
+                        Ok(conf.1)
+                    },
+                    None => {
+                        Err(SceneLoadError::ParseError)
+                    }
+                }
+            },
+            Err(err) => {
+                Err(SceneLoadError::IOError(err))
+            }
+        }
+    }
+
+    pub fn construct_meshes(&self) -> Vec<Mesh> {
+        let mut res : Vec<Mesh> = Vec::new();
+
+        for mesh_config in &self.meshes {
+            let mut mesh = Mesh::new_with_id_shader_tex(
+                mesh_config.id,
+                mesh_config.shader,
+                mesh_config.texture
+            );
+            mesh.set_offset(mesh_config.offset);
+            mesh.set_scale(mesh_config.scale);
+
+            res.push(mesh);
+        }
+
+        res
+    }
+    
+    fn scene_config_parser<'a>() -> impl Parser<Self, &'a str> {
+        move |input: &'a str| {
+            MeshConfig::mesh_config_parser().many_delim(
+                parsing::parse_ws().maybe().and(
+                    parsing::parse_token(",")
+                ).and(
+                    parsing::parse_ws().maybe()
+                )
+            ).map(
+                |mesh_configs| SceneConfig{ meshes: mesh_configs }
+            ).parse(input)
+        }
+    }
+}
+
+
+#[derive(Debug)]
+pub enum SceneLoadError {
+    IOError(std::io::Error),
+    ParseError
+}
+
